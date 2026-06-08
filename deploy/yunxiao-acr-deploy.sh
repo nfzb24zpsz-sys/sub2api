@@ -6,13 +6,18 @@ DEPLOY_DIR="${DEPLOY_DIR:-/opt/sub2api-deploy}"
 COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.yml"
 ENV_FILE="${DEPLOY_DIR}/.env"
 ENV_EXAMPLE_FILE="${DEPLOY_DIR}/.env.example"
-SOURCE_DIR="${SOURCE_DIR:-}"
-IMAGE="sub2api:local"
 
 COMPOSE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/docker-compose.local.yml"
 ENV_EXAMPLE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/.env.example"
 
-echo "[INFO] Deploy local image: $IMAGE"
+IMAGE="${IMAGE:-}"
+
+if [ -z "$IMAGE" ]; then
+  echo "[ERROR] IMAGE 为空，请在云效主机部署脚本中 export IMAGE=完整ACR镜像地址"
+  exit 1
+fi
+
+echo "[INFO] Deploy image: $IMAGE"
 
 run_as_root() {
   if [ "$(id -u)" = "0" ]; then
@@ -29,8 +34,6 @@ install_basic_tools() {
   if command -v curl >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1; then
     return
   fi
-
-  echo "[INFO] Install curl/openssl..."
 
   if command -v apt-get >/dev/null 2>&1; then
     run_as_root apt-get update -y
@@ -73,25 +76,6 @@ check_docker_compose() {
   exit 1
 }
 
-build_local_image() {
-  if [ -z "$SOURCE_DIR" ]; then
-    echo "[ERROR] SOURCE_DIR 为空，请在主机部署脚本里设置解压后的源码目录"
-    exit 1
-  fi
-
-  if [ ! -f "$SOURCE_DIR/Dockerfile" ]; then
-    echo "[ERROR] $SOURCE_DIR/Dockerfile 不存在，无法本地构建镜像"
-    exit 1
-  fi
-
-  echo "[INFO] Build local image from source: $SOURCE_DIR"
-  docker_cmd build \
-    --build-arg GOPROXY=https://goproxy.cn,direct \
-    --build-arg GOSUMDB=sum.golang.google.cn \
-    -t "$IMAGE" \
-    "$SOURCE_DIR"
-}
-
 docker_cmd() {
   if docker info >/dev/null 2>&1; then
     docker "$@"
@@ -119,23 +103,13 @@ ensure_deploy_files() {
   mkdir -p "$DEPLOY_DIR/data" "$DEPLOY_DIR/postgres_data" "$DEPLOY_DIR/redis_data"
 
   if [ ! -f "$COMPOSE_FILE" ]; then
-    if [ -n "$SOURCE_DIR" ] && [ -f "$SOURCE_DIR/deploy/docker-compose.local.yml" ]; then
-      echo "[INFO] Copy docker-compose.yml from source package..."
-      cp "$SOURCE_DIR/deploy/docker-compose.local.yml" "$COMPOSE_FILE"
-    else
-      echo "[INFO] Download docker-compose.yml..."
-      download_file "$COMPOSE_URL" "$COMPOSE_FILE"
-    fi
+    echo "[INFO] Download docker-compose.yml..."
+    download_file "$COMPOSE_URL" "$COMPOSE_FILE"
   fi
 
   if [ ! -f "$ENV_EXAMPLE_FILE" ]; then
-    if [ -n "$SOURCE_DIR" ] && [ -f "$SOURCE_DIR/deploy/.env.example" ]; then
-      echo "[INFO] Copy .env.example from source package..."
-      cp "$SOURCE_DIR/deploy/.env.example" "$ENV_EXAMPLE_FILE"
-    else
-      echo "[INFO] Download .env.example..."
-      download_file "$ENV_EXAMPLE_URL" "$ENV_EXAMPLE_FILE"
-    fi
+    echo "[INFO] Download .env.example..."
+    download_file "$ENV_EXAMPLE_URL" "$ENV_EXAMPLE_FILE"
   fi
 
   if [ ! -f "$ENV_FILE" ]; then
@@ -171,10 +145,20 @@ patch_compose_image() {
   set_env_value "SUB2API_IMAGE" "$IMAGE"
 }
 
+login_acr_if_configured() {
+  if [ -n "${ACR_REGISTRY:-}" ] && [ -n "${ACR_USERNAME:-}" ] && [ -n "${ACR_PASSWORD:-}" ]; then
+    echo "[INFO] Login ACR: $ACR_REGISTRY"
+    echo "$ACR_PASSWORD" | docker_cmd login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
+  else
+    echo "[WARN] 未配置 ACR 登录变量。如果仓库是私有的，请确保 ECS 已经 docker login 过，或配置 ACR_REGISTRY/ACR_USERNAME/ACR_PASSWORD。"
+  fi
+}
+
 deploy() {
   cd "$DEPLOY_DIR"
 
-  echo "[INFO] Use local image: $IMAGE"
+  echo "[INFO] Pull image..."
+  docker_cmd pull "$IMAGE"
 
   echo "[INFO] Start services..."
   docker_cmd compose up -d
@@ -202,7 +186,7 @@ deploy() {
 install_basic_tools
 install_docker_if_needed
 check_docker_compose
-build_local_image
 ensure_deploy_files
 patch_compose_image
+login_acr_if_configured
 deploy
