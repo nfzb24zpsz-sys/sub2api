@@ -88,35 +88,41 @@ generate_secret() {
   openssl rand -hex 32
 }
 
-file_owner_uid() {
-  if stat -c '%u' "$1" >/dev/null 2>&1; then
-    stat -c '%u' "$1"
-  else
-    stat -f '%u' "$1"
-  fi
-}
-
 download_file() {
   local url="$1"
   local output="$2"
   curl -fsSL "$url" -o "$output"
 }
 
-warn_if_postgres_data_looks_host_owned() {
-  local pg_map="$DEPLOY_DIR/postgres_data/global/pg_filenode.map"
+ensure_postgres_data_permissions() {
+  local pg_dir="$DEPLOY_DIR/postgres_data"
+  local pg_version="$pg_dir/PG_VERSION"
+  local permission_status
 
-  if [ ! -e "$pg_map" ]; then
+  if [ ! -e "$pg_version" ]; then
     return
   fi
 
-  local owner_uid
-  owner_uid="$(file_owner_uid "$pg_map" || true)"
+  permission_status="$(docker_cmd run --rm \
+    -v "$pg_dir:/var/lib/postgresql/data" \
+    --entrypoint sh \
+    postgres:18-alpine \
+    -c 'probe=/var/lib/postgresql/data/PG_VERSION; [ -e /var/lib/postgresql/data/global/pg_filenode.map ] && probe=/var/lib/postgresql/data/global/pg_filenode.map; expected="$(id -u postgres):$(id -g postgres)"; actual="$(stat -c "%u:%g" "$probe")"; mode="$(stat -c "%a" /var/lib/postgresql/data)"; if [ "$actual" = "$expected" ] && [ "$mode" = "700" ]; then echo ok; else echo repair; fi')"
 
-  if [ "$owner_uid" = "$(id -u)" ]; then
-    echo "[WARN] postgres_data appears to be owned by the deployment user."
-    echo "[WARN] If sub2api fails with 'global/pg_filenode.map: Permission denied', fix it with:"
-    echo "[WARN] cd $DEPLOY_DIR && docker compose stop sub2api postgres && docker run --rm -v \"\$PWD/postgres_data:/var/lib/postgresql/data\" --entrypoint sh postgres:18-alpine -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data' && docker compose up -d postgres sub2api"
+  if [ "$permission_status" = "ok" ]; then
+    return
   fi
+
+  echo "[WARN] PostgreSQL data directory ownership/permissions need repair."
+  echo "[INFO] Stop app and PostgreSQL containers before repair..."
+  docker_cmd stop sub2api sub2api-postgres >/dev/null 2>&1 || true
+
+  echo "[INFO] Repair PostgreSQL data directory ownership..."
+  docker_cmd run --rm \
+    -v "$pg_dir:/var/lib/postgresql/data" \
+    --entrypoint sh \
+    postgres:18-alpine \
+    -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data'
 }
 
 ensure_deploy_files() {
@@ -131,7 +137,7 @@ ensure_deploy_files() {
   # managed by their containers. Changing them from the host can make
   # PostgreSQL unable to read files such as global/pg_filenode.map.
   run_as_root chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR/data" || true
-  warn_if_postgres_data_looks_host_owned
+  ensure_postgres_data_permissions
 
   if [ ! -f "$COMPOSE_FILE" ]; then
     echo "[INFO] Download docker-compose.yml..."

@@ -553,7 +553,20 @@ sudo systemctl status redis
 1. **Port already in use**: Change `SERVER_PORT` in `.env` or systemd config
 2. **Database connection failed**: Check PostgreSQL is running and credentials are correct
 3. **Redis connection failed**: Check Redis is running and password is correct
-4. **Permission denied**: Ensure proper file ownership for binary install
+4. **`global/pg_filenode.map: Permission denied`**: The local `postgres_data/` directory is owned by the wrong host user. The Yunxiao ACR deploy script repairs this automatically before startup. For manual local deployments, run:
+
+```bash
+cd /path/to/sub2api-deploy
+docker compose stop sub2api postgres
+docker run --rm \
+  -v "$PWD/postgres_data:/var/lib/postgresql/data" \
+  --entrypoint sh \
+  postgres:18-alpine \
+  -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data'
+docker compose up -d postgres sub2api
+```
+
+5. **Permission denied in binary install**: Ensure proper file ownership for binary install
 
 ---
 
