@@ -51,16 +51,44 @@ install_basic_tools() {
   fi
 }
 
-install_docker_if_needed() {
-  if command -v docker >/dev/null 2>&1; then
-    echo "[INFO] Docker already installed"
-    return
+probe_url() {
+  local url="$1"
+  curl -fsSLI --connect-timeout 8 --retry 2 --retry-delay 1 "$url" >/dev/null 2>&1
+}
+
+report_probe() {
+  local name="$1"
+  local url="$2"
+
+  if probe_url "$url"; then
+    echo "[INFO] Network probe OK: $name ($url)"
+    return 0
   fi
 
-  echo "[INFO] Docker not found, installing..."
-  install_basic_tools
-  curl -fsSL https://get.docker.com | run_as_root sh
+  echo "[WARN] Network probe failed: $name ($url)"
+  return 1
+}
 
+get_os_release_value() {
+  local key="$1"
+
+  if [ ! -r /etc/os-release ]; then
+    return 1
+  fi
+
+  awk -F= -v target="$key" '$1 == target { gsub(/^"|"$/, "", $2); print $2; exit }' /etc/os-release
+}
+
+get_deb_arch() {
+  case "$(dpkg --print-architecture 2>/dev/null || uname -m)" in
+    amd64|x86_64) echo "amd64" ;;
+    arm64|aarch64) echo "arm64" ;;
+    armhf|armv7l) echo "armhf" ;;
+    *) echo "amd64" ;;
+  esac
+}
+
+start_docker_service() {
   if command -v systemctl >/dev/null 2>&1; then
     run_as_root systemctl enable docker
     run_as_root systemctl start docker
@@ -69,9 +97,117 @@ install_docker_if_needed() {
   fi
 }
 
+install_docker_via_aliyun_apt() {
+  local distro
+  local codename
+  local arch
+  local mirror_repo
+  local mirror_key_url
+  local official_key_url
+
+  distro="$(get_os_release_value ID)"
+  codename="$(get_os_release_value VERSION_CODENAME)"
+  arch="$(get_deb_arch)"
+
+  if [ -z "$distro" ] || [ -z "$codename" ]; then
+    echo "[WARN] 无法识别当前 apt 系统的发行版或代号，跳过阿里云 Docker 源安装"
+    return 1
+  fi
+
+  case "$distro" in
+    ubuntu|debian) ;;
+    *)
+      echo "[WARN] 当前 apt 系统发行版为 $distro，阿里云 Docker 源安装仅对 ubuntu/debian 启用"
+      return 1
+      ;;
+  esac
+
+  mirror_repo="https://mirrors.aliyun.com/docker-ce/linux/${distro}"
+  mirror_key_url="${mirror_repo}/gpg"
+  official_key_url="https://download.docker.com/linux/${distro}/gpg"
+
+  echo "[INFO] Prepare Docker apt repo via Aliyun mirror: distro=${distro}, codename=${codename}, arch=${arch}"
+  report_probe "Aliyun Docker repo" "${mirror_repo}/dists/${codename}/Release" || return 1
+
+  run_as_root install -m 0755 -d /etc/apt/keyrings
+
+  if probe_url "$mirror_key_url"; then
+    echo "[INFO] Download Docker GPG key from Aliyun mirror"
+    run_as_root curl -fsSL "$mirror_key_url" -o /etc/apt/keyrings/docker.asc
+  elif probe_url "$official_key_url"; then
+    echo "[WARN] Aliyun mirror GPG key unreachable, fallback to official Docker GPG key"
+    run_as_root curl -fsSL "$official_key_url" -o /etc/apt/keyrings/docker.asc
+  else
+    echo "[WARN] Docker GPG key is unreachable from both Aliyun mirror and official source"
+    return 1
+  fi
+
+  run_as_root chmod a+r /etc/apt/keyrings/docker.asc
+  printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] %s %s stable\n' "$arch" "$mirror_repo" "$codename" \
+    | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+  echo "[INFO] Install Docker CE from Aliyun mirror"
+  run_as_root apt-get update -y
+  run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
+install_docker_via_apt_fallback() {
+  echo "[WARN] Fallback to distro packages: apt install docker.io"
+  run_as_root apt-get update -y
+  run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+
+  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2; then
+    echo "[INFO] Installed docker-compose-v2"
+    return 0
+  fi
+
+  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin; then
+    echo "[INFO] Installed docker-compose-plugin"
+    return 0
+  fi
+
+  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose; then
+    echo "[INFO] Installed legacy docker-compose binary"
+    return 0
+  fi
+
+  echo "[WARN] Compose package installation skipped; will rely on whichever compose command is already available"
+}
+
+install_docker_if_needed() {
+  if command -v docker >/dev/null 2>&1; then
+    echo "[INFO] Docker already installed"
+    return
+  fi
+
+  echo "[INFO] Docker not found, installing..."
+  install_basic_tools
+
+  if command -v apt-get >/dev/null 2>&1; then
+    if install_docker_via_aliyun_apt; then
+      echo "[INFO] Docker installed from Aliyun mirror"
+    else
+      echo "[WARN] Aliyun mirror installation failed, trying distro fallback packages"
+      install_docker_via_apt_fallback
+    fi
+  else
+    report_probe "get.docker.com" "https://get.docker.com" || true
+    report_probe "download.docker.com" "https://download.docker.com" || true
+    curl -fsSL https://get.docker.com | run_as_root sh
+  fi
+
+  start_docker_service
+}
+
 check_docker_compose() {
   if docker compose version >/dev/null 2>&1 || run_as_root docker compose version >/dev/null 2>&1; then
     echo "[INFO] Docker Compose v2 available"
+    return
+  fi
+
+  if docker-compose version >/dev/null 2>&1 || run_as_root docker-compose version >/dev/null 2>&1; then
+    echo "[INFO] Legacy docker-compose available"
     return
   fi
 
@@ -85,6 +221,26 @@ docker_cmd() {
   else
     run_as_root docker "$@"
   fi
+}
+
+docker_compose() {
+  if docker compose version >/dev/null 2>&1 || run_as_root docker compose version >/dev/null 2>&1; then
+    docker_cmd compose "$@"
+    return
+  fi
+
+  if docker-compose version >/dev/null 2>&1; then
+    docker-compose "$@"
+    return
+  fi
+
+  if run_as_root docker-compose version >/dev/null 2>&1; then
+    run_as_root docker-compose "$@"
+    return
+  fi
+
+  echo "[ERROR] docker compose / docker-compose 都不可用"
+  exit 1
 }
 
 generate_secret() {
@@ -280,7 +436,7 @@ deploy() {
   docker_cmd pull "$IMAGE"
 
   echo "[INFO] Start services..."
-  docker_cmd compose up -d
+  docker_compose up -d
 
   echo "[INFO] Wait for health..."
   for _ in $(seq 1 40); do
@@ -288,7 +444,7 @@ deploy() {
 
     if [ "$status" = "healthy" ]; then
       echo "[SUCCESS] $APP_NAME is healthy"
-      docker_cmd compose ps
+      docker_compose ps
       exit 0
     fi
 
@@ -297,8 +453,8 @@ deploy() {
   done
 
   echo "[ERROR] Health check failed. Recent logs:"
-  docker_cmd compose logs --tail=120 sub2api
-  docker_cmd compose ps
+  docker_compose logs --tail=120 sub2api
+  docker_compose ps
   exit 1
 }
 
