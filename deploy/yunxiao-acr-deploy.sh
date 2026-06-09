@@ -12,6 +12,9 @@ ENV_EXAMPLE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/
 
 IMAGE="${IMAGE:-}"
 
+SCRIPT_VERSION="2026-06-09-postgres-force-repair"
+echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
+
 if [ -z "$IMAGE" ]; then
   echo "[ERROR] IMAGE 为空，请在云效主机部署脚本中 export IMAGE=完整ACR镜像地址"
   exit 1
