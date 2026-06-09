@@ -12,7 +12,7 @@ ENV_EXAMPLE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/
 
 IMAGE="${IMAGE:-}"
 
-SCRIPT_VERSION="2026-06-09-postgres-force-repair"
+SCRIPT_VERSION="2026-06-09-docker-aliyun-envfix"
 echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
 
 if [ -z "$IMAGE" ]; then
@@ -23,10 +23,32 @@ fi
 echo "[INFO] Deploy image: $IMAGE"
 
 run_as_root() {
+  local env_args=()
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      *=*)
+        env_args+=("$1")
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
   if [ "$(id -u)" = "0" ]; then
-    "$@"
+    if [ "${#env_args[@]}" -gt 0 ]; then
+      env "${env_args[@]}" "$@"
+    else
+      "$@"
+    fi
   elif command -v sudo >/dev/null 2>&1; then
-    sudo "$@"
+    if [ "${#env_args[@]}" -gt 0 ]; then
+      sudo env "${env_args[@]}" "$@"
+    else
+      sudo "$@"
+    fi
   else
     echo "[ERROR] 当前用户不是 root，且系统没有 sudo"
     exit 1
