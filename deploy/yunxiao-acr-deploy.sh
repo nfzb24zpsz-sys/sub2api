@@ -170,8 +170,18 @@ ensure_postgres_data_permissions_for_mount() {
     return
   fi
 
+  echo "[INFO] Check PostgreSQL data mount: $mount_spec"
+
+  if [ "${POSTGRES_DATA_FORCE_REPAIR:-true}" = "true" ]; then
+    echo "[INFO] Force repair PostgreSQL data mount ownership before startup."
+    repair_postgres_data_mount "$mount_spec"
+    return
+  fi
+
   if postgres_mount_needs_repair "$mount_spec"; then
     repair_postgres_data_mount "$mount_spec"
+  else
+    echo "[INFO] PostgreSQL data mount permissions look OK."
   fi
 }
 
