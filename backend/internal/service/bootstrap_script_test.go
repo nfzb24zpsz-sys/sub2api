@@ -1,6 +1,8 @@
 package service
 
 import (
+	"archive/zip"
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -27,6 +29,9 @@ func TestExecuteBootstrapTemplateUnix(t *testing.T) {
 		"function upsertRootTomlString",
 		"model_provider",
 		"wire_api",
+		"write_codex_auth_file",
+		"OPENAI_API_KEY",
+		"requires_openai_auth",
 		"configure_opencode_if_present",
 		"未检测到 opencode，已跳过。",
 		"configure_ccswitch_if_present",
@@ -60,6 +65,9 @@ func TestExecuteBootstrapTemplateWindows(t *testing.T) {
 		"function Set-RootTomlString",
 		"ConvertTo-HashtableCompat",
 		"wire_api",
+		"Write-CodexAuthFile",
+		"OPENAI_API_KEY",
+		"requires_openai_auth",
 		"Configure-OpenCodeIfPresent",
 		"未检测到 opencode，已跳过。",
 		"Configure-CCSwitchIfPresent",
@@ -124,6 +132,100 @@ func TestBootstrapLiteralEscaping(t *testing.T) {
 		t.Fatalf("executeBootstrapTemplate() error = %v", err)
 	}
 	mustContainAll(t, out, `BASE_URL='https://api.example.com/a'\''b'`, `API_KEY='sk-o'\''clock'`)
+}
+
+func TestBuildBootstrapPackageWindows(t *testing.T) {
+	data := bootstrapTemplateData{
+		ProviderID:   BootstrapProviderID,
+		ProviderName: BootstrapProviderName,
+		APIKeyEnv:    BootstrapAPIKeyEnv,
+		Model:        BootstrapCodexModel,
+		BaseURL:      "https://api.example.com",
+		APIKey:       "sk-test",
+		NPMRegistry:  BootstrapNPMRegistry,
+		NodeMirror:   BootstrapNodeMirror,
+	}
+	pkg, err := buildBootstrapPackage(data, BootstrapTargetWindows)
+	if err != nil {
+		t.Fatalf("buildBootstrapPackage() error = %v", err)
+	}
+	files := readZipFiles(t, pkg)
+	mustHaveZipFile(t, files, "一键开用.cmd")
+	mustHaveZipFile(t, files, "README.txt")
+	mustNotHaveZipFile(t, files, "一键开用.command")
+	cmd := readZipFile(t, files["一键开用.cmd"])
+	mustContainAll(t, cmd, "powershell -NoProfile -ExecutionPolicy Bypass", "::ERQISHI_POWERSHELL::")
+	readme := readZipFile(t, files["README.txt"])
+	mustContainAll(t, readme, "Windows:", "macOS:")
+}
+
+func TestBuildBootstrapPackageUnix(t *testing.T) {
+	data := bootstrapTemplateData{
+		ProviderID:   BootstrapProviderID,
+		ProviderName: BootstrapProviderName,
+		APIKeyEnv:    BootstrapAPIKeyEnv,
+		Model:        BootstrapCodexModel,
+		BaseURL:      "https://api.example.com",
+		APIKey:       "sk-test",
+		NPMRegistry:  BootstrapNPMRegistry,
+		NodeMirror:   BootstrapNodeMirror,
+	}
+	pkg, err := buildBootstrapPackage(data, BootstrapTargetUnix)
+	if err != nil {
+		t.Fatalf("buildBootstrapPackage() error = %v", err)
+	}
+	files := readZipFiles(t, pkg)
+	mustHaveZipFile(t, files, "一键开用.command")
+	mustHaveZipFile(t, files, "README.txt")
+	mustNotHaveZipFile(t, files, "一键开用.cmd")
+	if got := files["一键开用.command"].Mode().Perm(); got != 0o755 {
+		t.Fatalf("macOS command mode = %o, want 755", got)
+	}
+	mac := readZipFile(t, files["一键开用.command"])
+	mustContainAll(t, mac, "#!/usr/bin/env bash", "ensure_codex")
+	readme := readZipFile(t, files["README.txt"])
+	mustContainAll(t, readme, "Windows:", "macOS:")
+}
+
+func readZipFiles(t *testing.T, content []byte) map[string]*zip.File {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	if err != nil {
+		t.Fatalf("zip.NewReader() error = %v", err)
+	}
+	files := map[string]*zip.File{}
+	for _, file := range zr.File {
+		files[file.Name] = file
+	}
+	return files
+}
+
+func mustHaveZipFile(t *testing.T, files map[string]*zip.File, name string) {
+	t.Helper()
+	if files[name] == nil {
+		t.Fatalf("expected zip to contain %s", name)
+	}
+}
+
+func mustNotHaveZipFile(t *testing.T, files map[string]*zip.File, name string) {
+	t.Helper()
+	if files[name] != nil {
+		t.Fatalf("expected zip not to contain %s", name)
+	}
+}
+
+func readZipFile(t *testing.T, file *zip.File) string {
+	t.Helper()
+	rc, err := file.Open()
+	if err != nil {
+		t.Fatalf("open zip file %s: %v", file.Name, err)
+	}
+	defer rc.Close()
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(rc); err != nil {
+		t.Fatalf("read zip file %s: %v", file.Name, err)
+	}
+	return buf.String()
 }
 
 func mustContainAll(t *testing.T, value string, needles ...string) {

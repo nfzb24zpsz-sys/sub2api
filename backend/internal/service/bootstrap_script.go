@@ -1,9 +1,11 @@
 package service
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -32,7 +34,7 @@ type BootstrapScriptRequest struct {
 
 type BootstrapScriptResult struct {
 	Filename    string
-	Content     string
+	Content     []byte
 	ContentType string
 }
 
@@ -60,8 +62,8 @@ func (s *APIKeyService) GenerateBootstrapScript(ctx context.Context, userID int6
 	if key.Group != nil && key.Group.Platform == PlatformAntigravity {
 		baseURL += "/antigravity"
 	}
-
 	targetOS := normalizeBootstrapTargetOS(req.OS)
+
 	data := bootstrapTemplateData{
 		ProviderID:   BootstrapProviderID,
 		ProviderName: BootstrapProviderName,
@@ -73,31 +75,19 @@ func (s *APIKeyService) GenerateBootstrapScript(ctx context.Context, userID int6
 		NodeMirror:   BootstrapNodeMirror,
 	}
 
-	var tmpl string
-	contentType := "text/x-shellscript; charset=utf-8"
-	ext := ".sh"
-	if targetOS == BootstrapTargetWindows {
-		tmpl = windowsBootstrapTemplate
-		contentType = "text/plain; charset=utf-8"
-		ext = ".ps1"
-	} else {
-		tmpl = unixBootstrapTemplate
-	}
-
-	content, err := executeBootstrapTemplate(tmpl, data)
-	if err != nil {
-		return nil, fmt.Errorf("render bootstrap script: %w", err)
-	}
-
 	serviceName := "service"
 	if key.Group != nil && strings.TrimSpace(key.Group.Name) != "" {
 		serviceName = key.Group.Name
 	}
+	content, err := buildBootstrapPackage(data, targetOS)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BootstrapScriptResult{
-		Filename:    "erqishi-" + sanitizeBootstrapFilenamePart(serviceName) + "-setup" + ext,
+		Filename:    "erqishi-" + sanitizeBootstrapFilenamePart(serviceName) + "-setup.zip",
 		Content:     content,
-		ContentType: contentType,
+		ContentType: "application/zip",
 	}, nil
 }
 
@@ -155,6 +145,61 @@ func normalizeBootstrapTargetOS(os string) string {
 	default:
 		return BootstrapTargetUnix
 	}
+}
+
+func buildBootstrapPackage(data bootstrapTemplateData, targetOS string) ([]byte, error) {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	type bootstrapZipFile struct {
+		name    string
+		mode    fs.FileMode
+		content string
+	}
+	files := []bootstrapZipFile{
+		{name: "README.txt", mode: 0o644, content: bootstrapReadme},
+	}
+	if normalizeBootstrapTargetOS(targetOS) == BootstrapTargetWindows {
+		powerShellScript, err := executeBootstrapTemplate(windowsBootstrapTemplate, data)
+		if err != nil {
+			return nil, fmt.Errorf("render Windows bootstrap script: %w", err)
+		}
+		files = append([]bootstrapZipFile{{name: "一键开用.cmd", mode: 0o644, content: renderWindowsCommandWrapper(powerShellScript)}}, files...)
+	} else {
+		macScript, err := executeBootstrapTemplate(unixBootstrapTemplate, data)
+		if err != nil {
+			return nil, fmt.Errorf("render macOS bootstrap script: %w", err)
+		}
+		files = append([]bootstrapZipFile{{name: "一键开用.command", mode: 0o755, content: macScript}}, files...)
+	}
+	for _, file := range files {
+		header := &zip.FileHeader{
+			Name:   file.name,
+			Method: zip.Deflate,
+		}
+		header.SetMode(file.mode)
+		w, err := zw.CreateHeader(header)
+		if err != nil {
+			_ = zw.Close()
+			return nil, fmt.Errorf("create zip entry %s: %w", file.name, err)
+		}
+		if _, err := w.Write([]byte(file.content)); err != nil {
+			_ = zw.Close()
+			return nil, fmt.Errorf("write zip entry %s: %w", file.name, err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("close bootstrap zip: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func renderWindowsCommandWrapper(powerShellScript string) string {
+	return "@echo off\r\n" +
+		"setlocal\r\n" +
+		"powershell -NoProfile -ExecutionPolicy Bypass -Command \"$script = [System.IO.File]::ReadAllText('%~f0', [System.Text.Encoding]::UTF8); $marker = '::ERQISHI_POWERSHELL::'; $idx = $script.IndexOf($marker); if ($idx -lt 0) { throw 'PowerShell payload not found.' }; Invoke-Expression $script.Substring($idx + $marker.Length)\"\r\n" +
+		"exit /b %ERRORLEVEL%\r\n" +
+		"::ERQISHI_POWERSHELL::\r\n" +
+		powerShellScript
 }
 
 func normalizeBootstrapBaseURL(raw string) (string, error) {
@@ -223,6 +268,14 @@ func infraBadBootstrapRequest(message string) error {
 	return infraerrors.BadRequest("INVALID_BOOTSTRAP_REQUEST", message)
 }
 
+const bootstrapReadme = `Windows:
+双击“一键开用.cmd”，按提示等待完成。
+
+macOS:
+双击“一键开用.command”，按提示等待完成。
+如果系统提示无法打开，请右键点文件后选择“打开”。
+`
+
 const unixBootstrapTemplate = `#!/usr/bin/env bash
 set -euo pipefail
 
@@ -231,6 +284,7 @@ PROVIDER_NAME={{ .ProviderName | shq }}
 MODEL={{ .Model | shq }}
 BASE_URL={{ .BaseURL | shq }}
 API_KEY={{ .APIKey | shq }}
+API_KEY_ENV={{ .APIKeyEnv | shq }}
 NPM_REGISTRY={{ .NPMRegistry | shq }}
 NODE_MIRROR={{ .NodeMirror | shq }}
 CODEX_PACKAGE="@openai/codex"
@@ -322,6 +376,7 @@ write_env_file() {
   cat > "$HOME/.codex/$PROVIDER_ID.env" <<EOF_ENV
 export {{ .APIKeyEnv }}="$API_KEY"
 EOF_ENV
+  export "$API_KEY_ENV=$API_KEY"
   local profile begin end source_line
   profile="$(detect_shell_profile)"
   begin="# >>> $PROVIDER_ID managed"
@@ -343,6 +398,29 @@ fs.writeFileSync(path, text)
 NODE
 }
 
+write_codex_auth_file() {
+  mkdir -p "$HOME/.codex"
+  local auth="$HOME/.codex/auth.json"
+  [ -f "$auth" ] && cp "$auth" "$auth.$(date +%Y%m%d%H%M%S).erqishi.bak"
+  CODEX_AUTH_PATH="$auth" API_KEY="$API_KEY" node <<'NODE'
+const fs = require('fs')
+const path = process.env.CODEX_AUTH_PATH
+let auth = {}
+if (fs.existsSync(path)) {
+  try {
+    const raw = fs.readFileSync(path, 'utf8').trim()
+    auth = raw ? JSON.parse(raw) : {}
+  } catch {
+    fs.renameSync(path, path + '.invalid-erqishi-bak')
+    auth = {}
+  }
+}
+if (!auth || typeof auth !== 'object' || Array.isArray(auth)) auth = {}
+auth.OPENAI_API_KEY = process.env.API_KEY
+fs.writeFileSync(path, JSON.stringify(auth, null, 2) + "\n")
+NODE
+}
+
 configure_codex() {
   mkdir -p "$HOME/.codex"
   local config="$HOME/.codex/config.toml"
@@ -361,7 +439,7 @@ const block = begin + "\n"
   + "[model_providers." + providerId + "]\n"
   + "name = " + JSON.stringify(providerName) + "\n"
   + "base_url = " + JSON.stringify(baseUrl) + "\n"
-  + "env_key = " + JSON.stringify('{{ .APIKeyEnv }}') + "\n"
+  + "requires_openai_auth = true\n"
   + "wire_api = \"responses\"\n"
   + end
 let text = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : ''
@@ -456,6 +534,7 @@ log "开始配置 $PROVIDER_NAME 一键开用..."
 ensure_codex
 ensure_node
 write_env_file
+write_codex_auth_file
 configure_codex
 configure_opencode_if_present
 configure_ccswitch_if_present
@@ -568,6 +647,26 @@ function Write-EnvConfig {
   Set-Item -Path "Env:$ApiKeyEnv" -Value $ApiKey
 }
 
+function Write-CodexAuthFile {
+  $codexDir = Join-Path $env:USERPROFILE ".codex"
+  New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
+  $auth = Join-Path $codexDir "auth.json"
+  if (Test-Path $auth) { Copy-Item $auth "$auth.$(Get-Date -Format yyyyMMddHHmmss).erqishi.bak" }
+  $cfg = [ordered]@{}
+  if (Test-Path $auth) {
+    try {
+      $raw = Get-Content -Path $auth -Raw
+      if ($raw.Trim()) { $cfg = ConvertTo-HashtableCompat ($raw | ConvertFrom-Json) }
+    } catch {
+      Rename-Item -Path $auth -NewName ((Split-Path $auth -Leaf) + ".invalid-erqishi-bak") -Force
+      $cfg = [ordered]@{}
+    }
+  }
+  if (-not ($cfg -is [System.Collections.IDictionary])) { $cfg = [ordered]@{} }
+  $cfg["OPENAI_API_KEY"] = $ApiKey
+  $cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $auth -Encoding UTF8
+}
+
 function Configure-Codex {
   $codexDir = Join-Path $env:USERPROFILE ".codex"
   New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
@@ -578,13 +677,12 @@ function Configure-Codex {
   $end = "# <<< erqishi managed"
   $providerNameToml = ConvertTo-TomlString $ProviderName
   $baseUrlToml = ConvertTo-TomlString $BaseUrl
-  $apiKeyEnvToml = ConvertTo-TomlString $ApiKeyEnv
   $block = @"
 $begin
 [model_providers.$ProviderId]
 name = $providerNameToml
 base_url = $baseUrlToml
-env_key = $apiKeyEnvToml
+requires_openai_auth = true
 wire_api = "responses"
 $end
 "@.TrimEnd()
@@ -659,6 +757,7 @@ Write-Log "开始配置 $ProviderName 一键开用..."
 Ensure-Codex
 Ensure-Node
 Write-EnvConfig
+Write-CodexAuthFile
 Configure-Codex
 Configure-OpenCodeIfPresent
 Configure-CCSwitchIfPresent

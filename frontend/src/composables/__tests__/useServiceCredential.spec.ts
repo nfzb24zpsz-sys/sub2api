@@ -67,7 +67,7 @@ describe('useServiceCredential', () => {
     vi.clearAllMocks()
     copyToClipboard.mockResolvedValue(true)
     create.mockResolvedValue({ id: 2, key: 'sk-created', group_id: 7, status: 'active' })
-    downloadBootstrapScript.mockResolvedValue({ blob: new Blob(['setup']), filename: 'erqishi-claude-setup.sh' })
+    downloadBootstrapScript.mockResolvedValue({ blob: new Blob(['setup']), filename: 'erqishi-claude-setup.zip' })
   })
 
   it('reuses an existing active key for copy', async () => {
@@ -116,7 +116,7 @@ describe('useServiceCredential', () => {
     })
     expect(downloadBlobFile).toHaveBeenCalled()
     const [filename] = downloadBlobFile.mock.calls[0]
-    expect(filename).toBe('erqishi-claude-setup.sh')
+    expect(filename).toBe('erqishi-claude-setup.zip')
     expect(showSuccess).toHaveBeenCalledWith('services.bootstrapDownloaded')
   })
 })

@@ -141,7 +141,7 @@ export async function downloadBootstrapScript(payload: {
   })
   const disposition = response.headers['content-disposition'] || ''
   const filenameMatch = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(disposition)
-  const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"$/g, '')) : `erqishi-setup.${payload.os === 'windows' ? 'ps1' : 'sh'}`
+  const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"$/g, '')) : 'erqishi-setup.zip'
   return { blob: response.data, filename }
 }
 

@@ -218,7 +218,7 @@ func (h *APIKeyHandler) BootstrapScript(c *gin.Context) {
 
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, result.Filename))
 	c.Header("X-Content-Type-Options", "nosniff")
-	c.Data(http.StatusOK, result.ContentType, []byte(result.Content))
+	c.Data(http.StatusOK, result.ContentType, result.Content)
 }
 
 // Update handles updating an API key
