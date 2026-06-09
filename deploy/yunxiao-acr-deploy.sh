@@ -88,19 +88,50 @@ generate_secret() {
   openssl rand -hex 32
 }
 
+file_owner_uid() {
+  if stat -c '%u' "$1" >/dev/null 2>&1; then
+    stat -c '%u' "$1"
+  else
+    stat -f '%u' "$1"
+  fi
+}
+
 download_file() {
   local url="$1"
   local output="$2"
   curl -fsSL "$url" -o "$output"
 }
 
+warn_if_postgres_data_looks_host_owned() {
+  local pg_map="$DEPLOY_DIR/postgres_data/global/pg_filenode.map"
+
+  if [ ! -e "$pg_map" ]; then
+    return
+  fi
+
+  local owner_uid
+  owner_uid="$(file_owner_uid "$pg_map" || true)"
+
+  if [ "$owner_uid" = "$(id -u)" ]; then
+    echo "[WARN] postgres_data appears to be owned by the deployment user."
+    echo "[WARN] If sub2api fails with 'global/pg_filenode.map: Permission denied', fix it with:"
+    echo "[WARN] cd $DEPLOY_DIR && docker compose stop sub2api postgres && docker run --rm -v \"\$PWD/postgres_data:/var/lib/postgresql/data\" --entrypoint sh postgres:18-alpine -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data' && docker compose up -d postgres sub2api"
+  fi
+}
+
 ensure_deploy_files() {
   echo "[INFO] Ensure deploy directory: $DEPLOY_DIR"
 
   run_as_root mkdir -p "$DEPLOY_DIR"
-  run_as_root chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR" || true
+  run_as_root chown "$(id -u):$(id -g)" "$DEPLOY_DIR" || true
 
   mkdir -p "$DEPLOY_DIR/data" "$DEPLOY_DIR/postgres_data" "$DEPLOY_DIR/redis_data"
+  # Do not recursively chown the whole deploy directory: postgres_data and
+  # redis_data are bind-mounted service data directories whose ownership is
+  # managed by their containers. Changing them from the host can make
+  # PostgreSQL unable to read files such as global/pg_filenode.map.
+  run_as_root chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR/data" || true
+  warn_if_postgres_data_looks_host_owned
 
   if [ ! -f "$COMPOSE_FILE" ]; then
     echo "[INFO] Download docker-compose.yml..."
