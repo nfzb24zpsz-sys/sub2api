@@ -342,7 +342,7 @@
           </template>
 
           <template #cell-expires_at="{ value }">
-            <div v-if="value">
+            <div>
               <span
                 class="text-sm"
                 :class="
@@ -357,9 +357,6 @@
                 {{ getDaysRemaining(value) }} {{ t('admin.subscriptions.daysRemaining') }}
               </div>
             </div>
-            <span v-else class="text-sm text-gray-500">{{
-              t('admin.subscriptions.noExpiration')
-            }}</span>
           </template>
 
           <template #cell-status="{ value }">
@@ -588,14 +585,10 @@
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
             {{ t('admin.subscriptions.currentExpiration') }}:
             <span class="font-medium text-gray-900 dark:text-white">
-              {{
-                extendingSubscription.expires_at
-                  ? formatDateOnly(extendingSubscription.expires_at)
-                  : t('admin.subscriptions.noExpiration')
-              }}
+              {{ formatDateOnly(extendingSubscription.expires_at) }}
             </span>
           </p>
-          <p v-if="extendingSubscription.expires_at" class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
             {{ t('admin.subscriptions.remainingDays') }}:
             <span class="font-medium text-gray-900 dark:text-white">
               {{ getDaysRemaining(extendingSubscription.expires_at) ?? 0 }}
@@ -893,7 +886,7 @@ const statusOptions = computed(() => [
   { value: '', label: t('admin.subscriptions.allStatus') },
   { value: 'active', label: t('admin.subscriptions.status.active') },
   { value: 'expired', label: t('admin.subscriptions.status.expired') },
-  { value: 'revoked', label: t('admin.subscriptions.status.revoked') }
+  { value: 'suspended', label: t('admin.subscriptions.status.suspended') }
 ])
 
 const subscriptions = ref<UserSubscription[]>([])
@@ -1216,13 +1209,11 @@ const handleExtendSubscription = async () => {
   if (!extendingSubscription.value) return
 
   // 前端验证：调整后的过期时间必须在未来
-  if (extendingSubscription.value.expires_at) {
-    const expiresAt = new Date(extendingSubscription.value.expires_at)
-    const newExpiresAt = new Date(expiresAt.getTime() + extendForm.days * 24 * 60 * 60 * 1000)
-    if (newExpiresAt <= new Date()) {
-      appStore.showError(t('admin.subscriptions.adjustWouldExpire'))
-      return
-    }
+  const expiresAt = new Date(extendingSubscription.value.expires_at)
+  const newExpiresAt = new Date(expiresAt.getTime() + extendForm.days * 24 * 60 * 60 * 1000)
+  if (newExpiresAt <= new Date()) {
+    appStore.showError(t('admin.subscriptions.adjustWouldExpire'))
+    return
   }
 
   submitting.value = true
@@ -1339,7 +1330,7 @@ const formatQuotaEndDuration = (parts: RemainingDurationParts): string => {
 }
 
 const formatDailyUsageWindow = (subscription: UserSubscription): string => {
-  if (isOneTimeDailyQuota(subscription) && subscription.expires_at) {
+  if (isOneTimeDailyQuota(subscription)) {
     const parts = getRemainingDurationParts(subscription.expires_at)
     return parts ? formatQuotaEndDuration(parts) : t('admin.subscriptions.windowNotActive')
   }

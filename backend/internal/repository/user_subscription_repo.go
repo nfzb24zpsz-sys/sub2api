@@ -227,7 +227,7 @@ func (r *userSubscriptionRepository) List(ctx context.Context, params pagination
 	case "":
 		// No filter
 	default:
-		// Other status (e.g., revoked)
+		// Other status (e.g., suspended)
 		q = q.Where(usersubscription.StatusEQ(status))
 	}
 

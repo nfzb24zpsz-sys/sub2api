@@ -779,6 +779,16 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 	return availableGroups, nil
 }
 
+// GetGroupCatalog 获取用户端服务目录。
+// 目录与管理员的 /admin/groups/all 保持一致：返回所有活跃分组，但只暴露公开展示字段。
+func (s *APIKeyService) GetGroupCatalog(ctx context.Context) ([]Group, error) {
+	groups, err := s.groupRepo.ListActive(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list active groups: %w", err)
+	}
+	return groups, nil
+}
+
 // canUserBindGroupInternal 内部方法，检查用户是否可以绑定分组（使用预加载的订阅数据）
 func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool) bool {
 	// 订阅类型分组：需要有效订阅

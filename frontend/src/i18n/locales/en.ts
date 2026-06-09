@@ -311,6 +311,7 @@ export default {
     noGroupsAvailable: 'No groups available',
     unknownError: 'Unknown error occurred',
     saving: 'Saving...',
+    retry: 'Retry',
     selectedCount: '({count} selected)',
     refresh: 'Refresh',
     autoRefresh: {
@@ -349,6 +350,7 @@ export default {
     dashboard: 'Dashboard',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
+    myServices: 'My Services',
     usage: 'Usage',
     redeem: 'Redeem',
     affiliate: 'Affiliate Rebates',
@@ -672,6 +674,50 @@ export default {
   // Groups (shared)
   groups: {
     subscription: 'Sub'
+  },
+
+  // My Services
+  services: {
+    title: 'My Services',
+    description: 'Pick a service and configure it in your AI client with one click.',
+    balancePill: 'Balance ${balance}',
+    openNow: 'Start Now',
+    openHint: 'Configures all related apps and environment variables for you',
+    copy: 'Copy',
+    recharge: 'Recharge',
+    openSubscription: 'Subscribe',
+    processing: 'Processing...',
+    connectionSuffix: 'Connection',
+    copySuccess: 'Copied',
+    copyFailed: 'Copy failed',
+    openFailed: 'Failed to start',
+    loadFailed: 'Failed to load services',
+    ccSwitchNotInstalled: 'CC-Switch was not detected. Please install it first or copy the key for manual setup.',
+    emptyTitle: 'No services yet',
+    emptyDescription: 'Services will appear here after an administrator configures them.',
+    selectClientTitle: 'Choose a client',
+    selectClientDescription: 'Antigravity services can be configured for either Claude or Gemini clients.',
+    clientClaude: 'Claude client',
+    clientClaudeHint: 'For Claude Code / Anthropic-compatible setup',
+    clientGemini: 'Gemini client',
+    clientGeminiHint: 'For Gemini CLI / Google-compatible setup',
+    status: {
+      standardActive: 'Pay as you go · Balance ${balance}',
+      standardInsufficient: 'Pay as you go · Insufficient balance',
+      standardUnavailable: 'Pay as you go · Unavailable',
+      subscriptionActive: '● Subscription · {days} days left',
+      subscriptionExpired: 'Subscription · Expired',
+      subscriptionMissing: 'Subscription · Not subscribed',
+      subscriptionSuspended: 'Subscription · Suspended',
+      subscriptionUnavailable: 'Subscription · Unavailable'
+    },
+    value: {
+      standard: '1 CNY = {value} USD token value',
+      standardUnlimited: '1 CNY = unlimited USD token value',
+      daily: '{value} USD token value per day',
+      weekly: '{value} USD token value per week',
+      monthly: '{value} USD token value per month'
+    }
   },
 
   // API Keys
@@ -2895,7 +2941,7 @@ export default {
       status: {
         active: 'Active',
         expired: 'Expired',
-        revoked: 'Revoked'
+        suspended: 'Suspended'
       },
       columns: {
         user: 'User',
@@ -6635,7 +6681,7 @@ export default {
     status: {
       active: 'Active',
       expired: 'Expired',
-      revoked: 'Revoked'
+      suspended: 'Suspended'
     },
     usage: 'Usage',
     expires: 'Expires',
@@ -7110,7 +7156,7 @@ export default {
       subsStatus: {
         active: 'Active',
         expired: 'Expired',
-        revoked: 'Revoked',
+        suspended: 'Suspended',
       },
     },
   },

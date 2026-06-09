@@ -120,6 +120,9 @@ type Group struct {
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制），设置后覆盖用户级 rpm_limit。
 	RPMLimit int `json:"rpm_limit"`
 
+	// SortOrder 公开给用户端服务目录，用于保持与分组管理一致的排序。
+	SortOrder int `json:"sort_order"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -148,8 +151,6 @@ type AdminGroup struct {
 	ActiveAccountCount      int64          `json:"active_account_count,omitempty"`
 	RateLimitedAccountCount int64          `json:"rate_limited_account_count,omitempty"`
 
-	// 分组排序
-	SortOrder int `json:"sort_order"`
 }
 
 type Account struct {

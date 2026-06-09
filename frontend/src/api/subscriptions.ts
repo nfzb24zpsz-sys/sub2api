@@ -18,7 +18,7 @@ export interface SubscriptionSummary {
     daily_progress: number | null
     weekly_progress: number | null
     monthly_progress: number | null
-    expires_at: string | null
+    expires_at: string
     days_remaining: number | null
   }>
 }

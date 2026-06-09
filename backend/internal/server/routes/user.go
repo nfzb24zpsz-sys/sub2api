@@ -68,6 +68,7 @@ func RegisterUserRoutes(
 		// 用户可用分组（非管理员接口）
 		groups := authenticated.Group("/groups")
 		{
+			groups.GET("/catalog", h.APIKey.GetGroupCatalog)
 			groups.GET("/available", h.APIKey.GetAvailableGroups)
 			groups.GET("/rates", h.APIKey.GetUserGroupRates)
 		}

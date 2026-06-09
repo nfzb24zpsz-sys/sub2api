@@ -292,6 +292,27 @@ func (h *APIKeyHandler) GetAvailableGroups(c *gin.Context) {
 	response.Success(c, out)
 }
 
+// GetGroupCatalog 获取用户端服务目录。
+// GET /api/v1/groups/catalog
+func (h *APIKeyHandler) GetGroupCatalog(c *gin.Context) {
+	if _, ok := middleware2.GetAuthSubjectFromContext(c); !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	groups, err := h.apiKeyService.GetGroupCatalog(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	out := make([]dto.Group, 0, len(groups))
+	for i := range groups {
+		out = append(out, *dto.GroupFromService(&groups[i]))
+	}
+	response.Success(c, out)
+}
+
 // GetUserGroupRates 获取当前用户的专属分组倍率配置
 // GET /api/v1/groups/rates
 func (h *APIKeyHandler) GetUserGroupRates(c *gin.Context) {

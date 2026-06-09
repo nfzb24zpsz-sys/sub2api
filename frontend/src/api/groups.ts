@@ -19,6 +19,15 @@ export async function getAvailable(): Promise<Group[]> {
 }
 
 /**
+ * Get the user-facing service catalog.
+ * Returns the same active group catalog as admin group management, with public fields only.
+ */
+export async function getCatalog(): Promise<Group[]> {
+  const { data } = await apiClient.get<Group[]>('/groups/catalog')
+  return data
+}
+
+/**
  * Get current user's custom group rate multipliers
  * @returns Map of group_id to custom rate_multiplier
  */
@@ -28,6 +37,7 @@ export async function getUserGroupRates(): Promise<Record<number, number>> {
 }
 
 export const userGroupsAPI = {
+  getCatalog,
   getAvailable,
   getUserGroupRates
 }

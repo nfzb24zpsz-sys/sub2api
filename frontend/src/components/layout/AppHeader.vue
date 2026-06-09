@@ -123,7 +123,7 @@
 
                 <router-link to="/keys" @click="closeDropdown" class="dropdown-item">
                   <Icon name="key" size="sm" />
-                  {{ t('nav.apiKeys') }}
+                  {{ t('nav.myServices') }}
                 </router-link>
 
                 <a

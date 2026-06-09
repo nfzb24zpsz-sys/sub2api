@@ -528,6 +528,7 @@ export interface Group {
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
   require_privacy_set: boolean
+  sort_order?: number
   created_at: string
   updated_at: string
 }
@@ -1555,7 +1556,7 @@ export interface UserSubscription {
   id: number
   user_id: number
   group_id: number
-  status: 'active' | 'expired' | 'revoked'
+  status: 'active' | 'expired' | 'suspended'
   starts_at: string
   daily_usage_usd: number
   weekly_usage_usd: number
@@ -1565,7 +1566,7 @@ export interface UserSubscription {
   monthly_window_start: string | null
   created_at: string
   updated_at: string
-  expires_at: string | null
+  expires_at: string
   user?: User
   group?: Group
 }

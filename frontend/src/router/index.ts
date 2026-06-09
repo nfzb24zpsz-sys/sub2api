@@ -194,14 +194,27 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/keys',
-    name: 'Keys',
+    name: 'MyServices',
+    component: () => import('@/views/user/MyServicesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'My Services',
+      titleKey: 'services.title',
+      descriptionKey: 'services.description'
+    }
+  },
+  {
+    path: '/keys/advanced',
+    name: 'KeysAdvanced',
     component: () => import('@/views/user/KeysView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'API Keys',
+      title: 'Advanced API Keys',
       titleKey: 'keys.title',
-      descriptionKey: 'keys.description'
+      descriptionKey: 'keys.description',
+      hidden: true
     }
   },
   {

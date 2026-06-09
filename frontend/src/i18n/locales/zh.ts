@@ -311,6 +311,7 @@ export default {
     noGroupsAvailable: '无可用分组',
     unknownError: '发生未知错误',
     saving: '保存中...',
+    retry: '重试',
     selectedCount: '（已选 {count} 个）',
     refresh: '刷新',
     autoRefresh: {
@@ -349,6 +350,7 @@ export default {
     dashboard: '仪表盘',
     announcements: '公告',
     apiKeys: 'API 密钥',
+    myServices: '我的服务',
     usage: '使用记录',
     redeem: '兑换',
     affiliate: '邀请返利',
@@ -671,6 +673,50 @@ export default {
   // Groups (shared)
   groups: {
     subscription: '订阅'
+  },
+
+  // My Services
+  services: {
+    title: '我的服务',
+    description: '选择服务，一键配置到你的 AI 客户端。',
+    balancePill: '余额 ${balance}',
+    openNow: '一键开用',
+    openHint: '帮你配置好所有相关应用与环境',
+    copy: '复制',
+    recharge: '去充值',
+    openSubscription: '去开通',
+    processing: '处理中...',
+    connectionSuffix: '连接',
+    copySuccess: '已复制',
+    copyFailed: '复制失败',
+    openFailed: '一键开用失败',
+    loadFailed: '加载服务列表失败',
+    ccSwitchNotInstalled: '未检测到 CC-Switch，请先安装或改用复制手动配置。',
+    emptyTitle: '暂无服务',
+    emptyDescription: '管理员配置服务后会显示在这里。',
+    selectClientTitle: '选择要配置的客户端',
+    selectClientDescription: 'Antigravity 服务可配置到 Claude 或 Gemini 客户端。',
+    clientClaude: 'Claude 客户端',
+    clientClaudeHint: '用于 Claude Code / Anthropic 兼容接入',
+    clientGemini: 'Gemini 客户端',
+    clientGeminiHint: '用于 Gemini CLI / Google 兼容接入',
+    status: {
+      standardActive: '按量付费 · 余额 ${balance}',
+      standardInsufficient: '按量付费 · 余额不足',
+      standardUnavailable: '按量付费 · 暂不可用',
+      subscriptionActive: '● 套餐 · 剩 {days} 天',
+      subscriptionExpired: '套餐 · 已到期',
+      subscriptionMissing: '套餐 · 未开通',
+      subscriptionSuspended: '套餐 · 已暂停',
+      subscriptionUnavailable: '套餐 · 暂不可用'
+    },
+    value: {
+      standard: '1 元 = {value} 美元 token',
+      standardUnlimited: '1 元 = 不限量美元 token',
+      daily: '每天可使用 {value} 美元 token',
+      weekly: '每周可使用 {value} 美元 token',
+      monthly: '每月可使用 {value} 美元 token'
+    }
   },
 
   // API Keys
@@ -2972,7 +3018,7 @@ export default {
       status: {
         active: '生效中',
         expired: '已过期',
-        revoked: '已撤销'
+        suspended: '已暂停'
       },
       columns: {
         user: '用户',
@@ -6788,7 +6834,7 @@ export default {
     status: {
       active: '有效',
       expired: '已过期',
-      revoked: '已撤销'
+      suspended: '已暂停'
     },
     usage: '用量',
     expires: '到期时间',
@@ -7289,7 +7335,7 @@ export default {
       subsStatus: {
         active: '生效中',
         expired: '已过期',
-        revoked: '已撤销',
+        suspended: '已暂停',
       },
     },
   },
