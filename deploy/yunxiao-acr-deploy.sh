@@ -11,8 +11,12 @@ COMPOSE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/dock
 ENV_EXAMPLE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/.env.example"
 
 IMAGE="${IMAGE:-}"
+DOCKERHUB_IMAGE_PREFIX="${DOCKERHUB_IMAGE_PREFIX:-m.daocloud.io/docker.io/library}"
+POSTGRES_IMAGE="${POSTGRES_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/postgres:18-alpine}"
+REDIS_IMAGE="${REDIS_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/redis:8-alpine}"
+POSTGRES_MAINTENANCE_IMAGE="${POSTGRES_MAINTENANCE_IMAGE:-$POSTGRES_IMAGE}"
 
-SCRIPT_VERSION="2026-06-09-docker-aliyun-envfix"
+SCRIPT_VERSION="2026-06-09-dockerhub-mirror-images"
 echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
 
 if [ -z "$IMAGE" ]; then
@@ -282,7 +286,7 @@ postgres_mount_needs_repair() {
   if ! permission_status="$(docker_cmd run --rm \
     -v "$mount_spec:/var/lib/postgresql/data" \
     --entrypoint sh \
-    postgres:18-alpine \
+    "$POSTGRES_MAINTENANCE_IMAGE" \
     -c '
       set -eu
       data=/var/lib/postgresql/data
@@ -340,7 +344,7 @@ repair_postgres_data_mount() {
   docker_cmd run --rm \
     -v "$mount_spec:/var/lib/postgresql/data" \
     --entrypoint sh \
-    postgres:18-alpine \
+    "$POSTGRES_MAINTENANCE_IMAGE" \
     -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data'
 }
 
@@ -352,6 +356,11 @@ ensure_postgres_data_permissions_for_mount() {
   fi
 
   echo "[INFO] Check PostgreSQL data mount: $mount_spec"
+
+  if [ -d "$mount_spec" ] && [ ! -e "$mount_spec/PG_VERSION" ]; then
+    echo "[INFO] PostgreSQL data mount has no PG_VERSION yet; skip repair and let first startup initialize it."
+    return
+  fi
 
   if [ "${POSTGRES_DATA_FORCE_REPAIR:-true}" = "true" ]; then
     echo "[INFO] Force repair PostgreSQL data mount ownership before startup."
@@ -439,7 +448,17 @@ patch_compose_image() {
     sed -i 's#image: weishaw/sub2api:latest#image: ${SUB2API_IMAGE}#' "$COMPOSE_FILE"
   fi
 
+  if grep -q "image: postgres:18-alpine" "$COMPOSE_FILE"; then
+    sed -i 's#image: postgres:18-alpine#image: ${POSTGRES_IMAGE}#' "$COMPOSE_FILE"
+  fi
+
+  if grep -q "image: redis:8-alpine" "$COMPOSE_FILE"; then
+    sed -i 's#image: redis:8-alpine#image: ${REDIS_IMAGE}#' "$COMPOSE_FILE"
+  fi
+
   set_env_value "SUB2API_IMAGE" "$IMAGE"
+  set_env_value "POSTGRES_IMAGE" "$POSTGRES_IMAGE"
+  set_env_value "REDIS_IMAGE" "$REDIS_IMAGE"
 }
 
 login_acr_if_configured() {
