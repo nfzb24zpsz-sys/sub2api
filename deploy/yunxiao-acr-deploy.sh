@@ -94,24 +94,62 @@ download_file() {
   curl -fsSL "$url" -o "$output"
 }
 
-ensure_postgres_data_permissions() {
-  local pg_dir="$DEPLOY_DIR/postgres_data"
-  local pg_version="$pg_dir/PG_VERSION"
+postgres_mount_needs_repair() {
+  local mount_spec="$1"
   local permission_status
 
-  if [ ! -e "$pg_version" ]; then
-    return
-  fi
-
-  permission_status="$(docker_cmd run --rm \
-    -v "$pg_dir:/var/lib/postgresql/data" \
+  if ! permission_status="$(docker_cmd run --rm \
+    -v "$mount_spec:/var/lib/postgresql/data" \
     --entrypoint sh \
     postgres:18-alpine \
-    -c 'probe=/var/lib/postgresql/data/PG_VERSION; [ -e /var/lib/postgresql/data/global/pg_filenode.map ] && probe=/var/lib/postgresql/data/global/pg_filenode.map; expected="$(id -u postgres):$(id -g postgres)"; actual="$(stat -c "%u:%g" "$probe")"; mode="$(stat -c "%a" /var/lib/postgresql/data)"; if [ "$actual" = "$expected" ] && [ "$mode" = "700" ]; then echo ok; else echo repair; fi')"
+    -c '
+      set -eu
+      data=/var/lib/postgresql/data
+      if [ ! -e "$data/PG_VERSION" ]; then
+        echo empty
+        exit 0
+      fi
 
-  if [ "$permission_status" = "ok" ]; then
-    return
+      expected="$(id -u postgres):$(id -g postgres)"
+      data_owner="$(stat -c "%u:%g" "$data")"
+      data_mode="$(stat -c "%a" "$data")"
+      pg_version_owner="$(stat -c "%u:%g" "$data/PG_VERSION")"
+
+      if [ "$data_owner" != "$expected" ] || [ "$data_mode" != "700" ] || [ "$pg_version_owner" != "$expected" ]; then
+        echo repair
+        exit 0
+      fi
+
+      if [ -e "$data/global" ]; then
+        global_owner="$(stat -c "%u:%g" "$data/global")"
+        if [ "$global_owner" != "$expected" ]; then
+          echo repair
+          exit 0
+        fi
+      fi
+
+      if [ -e "$data/global/pg_filenode.map" ]; then
+        filenode_owner="$(stat -c "%u:%g" "$data/global/pg_filenode.map")"
+        if [ "$filenode_owner" != "$expected" ]; then
+          echo repair
+          exit 0
+        fi
+        if command -v su-exec >/dev/null 2>&1 && ! su-exec postgres test -r "$data/global/pg_filenode.map"; then
+          echo repair
+          exit 0
+        fi
+      fi
+
+      echo ok
+    ' 2>/dev/null)"; then
+    permission_status="repair"
   fi
+
+  [ "$permission_status" = "repair" ]
+}
+
+repair_postgres_data_mount() {
+  local mount_spec="$1"
 
   echo "[WARN] PostgreSQL data directory ownership/permissions need repair."
   echo "[INFO] Stop app and PostgreSQL containers before repair..."
@@ -119,10 +157,40 @@ ensure_postgres_data_permissions() {
 
   echo "[INFO] Repair PostgreSQL data directory ownership..."
   docker_cmd run --rm \
-    -v "$pg_dir:/var/lib/postgresql/data" \
+    -v "$mount_spec:/var/lib/postgresql/data" \
     --entrypoint sh \
     postgres:18-alpine \
     -c 'chown -R postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data'
+}
+
+ensure_postgres_data_permissions_for_mount() {
+  local mount_spec="$1"
+
+  if [ -z "$mount_spec" ]; then
+    return
+  fi
+
+  if postgres_mount_needs_repair "$mount_spec"; then
+    repair_postgres_data_mount "$mount_spec"
+  fi
+}
+
+existing_postgres_data_mount() {
+  docker_cmd inspect sub2api-postgres \
+    --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{if eq .Type "volume"}}{{.Name}}{{else}}{{.Source}}{{end}}{{end}}{{end}}' \
+    2>/dev/null || true
+}
+
+ensure_postgres_data_permissions() {
+  local local_mount="$DEPLOY_DIR/postgres_data"
+  local current_mount
+
+  current_mount="$(existing_postgres_data_mount)"
+  ensure_postgres_data_permissions_for_mount "$current_mount"
+
+  if [ "$current_mount" != "$local_mount" ]; then
+    ensure_postgres_data_permissions_for_mount "$local_mount"
+  fi
 }
 
 ensure_deploy_files() {
@@ -137,7 +205,6 @@ ensure_deploy_files() {
   # managed by their containers. Changing them from the host can make
   # PostgreSQL unable to read files such as global/pg_filenode.map.
   run_as_root chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR/data" || true
-  ensure_postgres_data_permissions
 
   if [ ! -f "$COMPOSE_FILE" ]; then
     echo "[INFO] Download docker-compose.yml..."
@@ -161,6 +228,8 @@ ensure_deploy_files() {
     chmod 600 "$ENV_FILE"
     echo "[WARN] ADMIN_PASSWORD 为空时，首次启动会自动生成；请通过日志查看"
   fi
+
+  ensure_postgres_data_permissions
 }
 
 set_env_value() {
