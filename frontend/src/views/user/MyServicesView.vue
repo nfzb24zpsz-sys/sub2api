@@ -86,28 +86,6 @@
       </div>
     </div>
 
-    <BaseDialog
-      :show="showAntigravityClientDialog"
-      :title="t('services.selectClientTitle')"
-      width="narrow"
-      @close="showAntigravityClientDialog = false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ t('services.selectClientDescription') }}
-        </p>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <button class="rounded-xl border border-gray-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 dark:border-dark-600 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10" @click="confirmAntigravityClient('claude')">
-            <span class="font-semibold text-gray-900 dark:text-white">{{ t('services.clientClaude') }}</span>
-            <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ t('services.clientClaudeHint') }}</span>
-          </button>
-          <button class="rounded-xl border border-gray-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 dark:border-dark-600 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10" @click="confirmAntigravityClient('gemini')">
-            <span class="font-semibold text-gray-900 dark:text-white">{{ t('services.clientGemini') }}</span>
-            <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ t('services.clientGeminiHint') }}</span>
-          </button>
-        </div>
-      </div>
-    </BaseDialog>
   </AppLayout>
 </template>
 
@@ -120,10 +98,8 @@ import subscriptionsAPI from '@/api/subscriptions'
 import { useServiceCredential } from '@/composables/useServiceCredential'
 import { useAuthStore, useAppStore } from '@/stores'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import BaseDialog from '@/components/common/BaseDialog.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
-import type { CcSwitchClientType } from '@/utils/ccswitchImport'
 import type { Group, UserSubscription } from '@/types'
 
 interface ServiceRow {
@@ -145,14 +121,11 @@ const userGroupRates = ref<Record<number, number>>({})
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
 const loadError = ref('')
-const showAntigravityClientDialog = ref(false)
-const pendingAntigravityGroup = ref<Group | null>(null)
 
 const balance = computed(() => authStore.user?.balance ?? 0)
 
 const credential = useServiceCredential({
   getBaseUrl: () => appStore.apiBaseUrl || window.location.origin,
-  getProviderName: () => (appStore.siteName || 'sub2api').trim() || 'sub2api',
 })
 
 const serviceRows = computed<ServiceRow[]>(() => {
@@ -255,21 +228,7 @@ function formatSubscriptionLimit(group: Group): string {
 }
 
 function handleOpen(row: ServiceRow) {
-  if (row.group.platform === 'antigravity') {
-    pendingAntigravityGroup.value = row.group
-    showAntigravityClientDialog.value = true
-    return
-  }
-  credential.importToCcSwitch(row.group)
-}
-
-function confirmAntigravityClient(clientType: CcSwitchClientType) {
-  const group = pendingAntigravityGroup.value
-  showAntigravityClientDialog.value = false
-  pendingAntigravityGroup.value = null
-  if (group) {
-    credential.importToCcSwitch(group, clientType)
-  }
+  credential.downloadBootstrapScript(row.group)
 }
 
 function goToPurchase(row: ServiceRow) {

@@ -59,8 +59,9 @@ func RegisterUserRoutes(
 		keys := authenticated.Group("/keys")
 		{
 			keys.GET("", h.APIKey.List)
-			keys.GET("/:id", h.APIKey.GetByID)
 			keys.POST("", h.APIKey.Create)
+			keys.POST("/bootstrap", h.APIKey.BootstrapScript)
+			keys.GET("/:id", h.APIKey.GetByID)
 			keys.PUT("/:id", h.APIKey.Update)
 			keys.DELETE("/:id", h.APIKey.Delete)
 		}

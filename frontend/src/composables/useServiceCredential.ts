@@ -4,32 +4,14 @@ import { keysAPI } from '@/api/keys'
 import { useClipboard } from '@/composables/useClipboard'
 import { useAppStore } from '@/stores/app'
 import {
-  buildCcSwitchImportDeeplink,
-  type CcSwitchClientType,
-} from '@/utils/ccswitchImport'
+  detectServiceBootstrapTargetOS,
+  downloadBlobFile,
+} from '@/utils/serviceBootstrap'
 import type { ApiKey, Group } from '@/types'
 
 interface UseServiceCredentialOptions {
   getBaseUrl: () => string
-  getProviderName: () => string
 }
-
-const usageScript = `({
-  request: {
-    url: "{{baseUrl}}/v1/usage",
-    method: "GET",
-    headers: { "Authorization": "Bearer {{apiKey}}" }
-  },
-  extractor: function(response) {
-    const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
-    const unit = response?.unit ?? response?.quota?.unit ?? "USD";
-    return {
-      isValid: response?.is_active ?? response?.isValid ?? true,
-      remaining,
-      unit
-    };
-  }
-})`
 
 function isReusableKey(key: ApiKey, groupId: number): boolean {
   return key.group_id === groupId && key.status === 'active'
@@ -87,28 +69,18 @@ export function useServiceCredential(options: UseServiceCredentialOptions) {
     }
   }
 
-  async function importToCcSwitch(group: Group, clientType?: CcSwitchClientType): Promise<void> {
-    const resolvedClientType: CcSwitchClientType =
-      clientType || (group.platform === 'gemini' ? 'gemini' : 'claude')
-
+  async function downloadBootstrapScript(group: Group): Promise<void> {
     setGroupLoading(group.id, true)
     try {
-      const key = await getOrCreateCredential(group)
-      const deeplink = buildCcSwitchImportDeeplink({
-        baseUrl: options.getBaseUrl(),
-        platform: group.platform,
-        clientType: resolvedClientType,
-        providerName: options.getProviderName(),
-        apiKey: key.key,
-        usageScript,
+      const targetOS = detectServiceBootstrapTargetOS()
+      const { blob, filename } = await keysAPI.downloadBootstrapScript({
+        group_id: group.id,
+        os: targetOS,
+        base_url: options.getBaseUrl(),
       })
 
-      window.open(deeplink, '_self')
-      setTimeout(() => {
-        if (document.hasFocus()) {
-          appStore.showError(t('services.ccSwitchNotInstalled'))
-        }
-      }, 100)
+      downloadBlobFile(filename, blob)
+      appStore.showSuccess(t('services.bootstrapDownloaded'))
     } catch (error: any) {
       appStore.showError(error?.response?.data?.detail || t('services.openFailed'))
     } finally {
@@ -123,7 +95,7 @@ export function useServiceCredential(options: UseServiceCredentialOptions) {
   return {
     copyCredential,
     getOrCreateCredential,
-    importToCcSwitch,
+    downloadBootstrapScript,
     isGroupLoading,
     loadingGroupIds,
   }

@@ -690,6 +690,7 @@ export default {
     copySuccess: '已复制',
     copyFailed: '复制失败',
     openFailed: '一键开用失败',
+    bootstrapDownloaded: '一键开用脚本已下载，请在本机终端运行。',
     loadFailed: '加载服务列表失败',
     ccSwitchNotInstalled: '未检测到 CC-Switch，请先安装或改用复制手动配置。',
     emptyTitle: '暂无服务',

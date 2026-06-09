@@ -691,6 +691,7 @@ export default {
     copySuccess: 'Copied',
     copyFailed: 'Copy failed',
     openFailed: 'Failed to start',
+    bootstrapDownloaded: 'Setup script downloaded. Run it in your local terminal.',
     loadFailed: 'Failed to load services',
     ccSwitchNotInstalled: 'CC-Switch was not detected. Please install it first or copy the key for manual setup.',
     emptyTitle: 'No services yet',
