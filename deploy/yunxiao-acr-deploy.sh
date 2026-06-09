@@ -148,26 +148,26 @@ install_docker_via_aliyun_apt() {
 
   echo "[INFO] Install Docker CE from Aliyun mirror"
   run_as_root apt-get update -y
-  run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
 install_docker_via_apt_fallback() {
   echo "[WARN] Fallback to distro packages: apt install docker.io"
   run_as_root apt-get update -y
-  run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+  run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
 
-  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2; then
+  if run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2; then
     echo "[INFO] Installed docker-compose-v2"
     return 0
   fi
 
-  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin; then
+  if run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin; then
     echo "[INFO] Installed docker-compose-plugin"
     return 0
   fi
 
-  if run_as_root DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose; then
+  if run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose; then
     echo "[INFO] Installed legacy docker-compose binary"
     return 0
   fi
