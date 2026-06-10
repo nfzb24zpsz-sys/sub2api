@@ -681,7 +681,7 @@ export default {
     description: '选择服务，一键配置到你的 AI 客户端。',
     balancePill: '余额 ${balance}',
     openNow: '一键开用',
-    openHint: '帮你配置好所有相关应用与环境',
+    openHint: '打开分步引导，下载客户端并完成配置',
     copy: '复制',
     recharge: '去充值',
     openSubscription: '去开通',
@@ -690,7 +690,6 @@ export default {
     copySuccess: '已复制',
     copyFailed: '复制失败',
     openFailed: '一键开用失败',
-    bootstrapDownloaded: '一键开用脚本已下载，请在本机终端运行。',
     loadFailed: '加载服务列表失败',
     ccSwitchNotInstalled: '未检测到 CC-Switch，请先安装或改用复制手动配置。',
     emptyTitle: '暂无服务',
@@ -717,6 +716,90 @@ export default {
       daily: '每天可使用 {value} 美元 token',
       weekly: '每周可使用 {value} 美元 token',
       monthly: '每月可使用 {value} 美元 token'
+    },
+    guide: {
+      title: '服务配置引导',
+      description: '选择你要使用的 AI 客户端，然后按步骤下载客户端并配置当前服务。',
+      detectionNote:
+        '网页无法可靠判断你的电脑已经安装了哪些本地 AI 客户端。浏览器出于安全原因不能枚举本机应用；这里只能记录你手动确认过的安装状态。',
+      chooseClientTitle: '选择你要使用的 AI 客户端',
+      chooseClientHint: 'Codex、Cursor、OpenCode、Qoder',
+      download: '下载',
+      openDownloadPage: '打开下载页',
+      stepsTitle: '{client} 配置步骤',
+      currentStep: '第 {index} / {total} 步',
+      configTitle: '配置内容',
+      haveInstalled: '我已安装',
+      installStatusHint:
+        '安装检测结果由你手动确认保存，仅用于本浏览器提示。后续如接入桌面端或浏览器扩展，才可以做更可靠的本机检测。',
+      status: {
+        unknown: '无法自动检测',
+        confirmed: '已确认安装'
+      },
+      stepTitles: {
+        download: '下载客户端',
+        configure: '配置服务',
+        start: '开始使用',
+        verify: '验证连接'
+      },
+      stepSummaries: {
+        start: '打开客户端并发送测试请求',
+        verify: '用一条测试消息确认连接',
+        codex: {
+          download: '安装 Codex 命令行客户端',
+          configure: '写入 Codex 配置和密钥'
+        },
+        cursor: {
+          download: '安装 Cursor 编辑器',
+          configure: '添加 OpenAI 兼容服务'
+        },
+        opencode: {
+          download: '安装 OpenCode 命令行客户端',
+          configure: '写入 opencode.json'
+        },
+        qoder: {
+          download: '安装 Qoder',
+          configure: '添加 OpenAI 兼容服务'
+        }
+      },
+      clients: {
+        codex: {
+          description: '适合直接在终端中使用官方 Codex 工作流。',
+          installHint: '命令行客户端',
+          steps: {
+            download: '打开官方下载页或使用包管理器安装 Codex。安装完成后回到此面板继续配置。',
+            configure: '将下面的内容写入 Codex 配置目录。配置里已经填好当前服务地址和 API Key。',
+            start: '打开终端运行 Codex，并发送一条简单请求确认服务可用。'
+          }
+        },
+        cursor: {
+          description: '适合在 Cursor 编辑器中使用自定义 OpenAI 兼容服务。',
+          installHint: '桌面编辑器',
+          steps: {
+            download: '下载安装 Cursor。浏览器无法确认你是否已安装，安装后可以点击“我已安装”记录状态。',
+            configure: '在 Cursor 设置中添加 OpenAI 兼容服务，并填入下面的 Base URL 与 API Key。',
+            verify: '新建一个聊天或代码编辑请求，确认请求能从当前服务返回。'
+          }
+        },
+        opencode: {
+          description: '适合在终端里使用 OpenCode，并用 JSON 管理 provider。',
+          installHint: '命令行客户端',
+          steps: {
+            download: '安装 OpenCode 客户端。完成后继续写入配置文件。',
+            configure: '将下面配置合并到 ~/.config/opencode/opencode.json 或 opencode.jsonc。',
+            start: '运行 opencode，选择对应 provider 后发送测试请求。'
+          }
+        },
+        qoder: {
+          description: '适合在 Qoder 中接入自定义 OpenAI 兼容服务。',
+          installHint: '桌面客户端',
+          steps: {
+            download: '下载安装 Qoder。网页只能打开下载页，无法直接读取本机安装列表。',
+            configure: '在 Qoder 的模型或 provider 设置中添加 OpenAI 兼容服务，填入下面信息。',
+            verify: '打开一个项目并发送测试请求，确认服务配置生效。'
+          }
+        }
+      }
     }
   },
 

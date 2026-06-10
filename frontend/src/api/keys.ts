@@ -131,20 +131,6 @@ export async function toggleStatus(id: number, status: 'active' | 'inactive'): P
   return update(id, { status })
 }
 
-export async function downloadBootstrapScript(payload: {
-  group_id: number
-  os: 'unix' | 'windows'
-  base_url: string
-}): Promise<{ blob: Blob; filename: string }> {
-  const response = await apiClient.post<Blob>('/keys/bootstrap', payload, {
-    responseType: 'blob',
-  })
-  const disposition = response.headers['content-disposition'] || ''
-  const filenameMatch = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(disposition)
-  const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"$/g, '')) : 'erqishi-setup.zip'
-  return { blob: response.data, filename }
-}
-
 export const keysAPI = {
   list,
   getById,
@@ -152,7 +138,6 @@ export const keysAPI = {
   update,
   delete: deleteKey,
   toggleStatus,
-  downloadBootstrapScript,
 }
 
 export default keysAPI

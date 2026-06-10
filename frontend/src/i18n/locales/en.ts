@@ -682,7 +682,7 @@ export default {
     description: 'Pick a service and configure it in your AI client with one click.',
     balancePill: 'Balance ${balance}',
     openNow: 'Start Now',
-    openHint: 'Configures all related apps and environment variables for you',
+    openHint: 'Open a guided setup to download and configure a client',
     copy: 'Copy',
     recharge: 'Recharge',
     openSubscription: 'Subscribe',
@@ -691,7 +691,6 @@ export default {
     copySuccess: 'Copied',
     copyFailed: 'Copy failed',
     openFailed: 'Failed to start',
-    bootstrapDownloaded: 'Setup script downloaded. Run it in your local terminal.',
     loadFailed: 'Failed to load services',
     ccSwitchNotInstalled: 'CC-Switch was not detected. Please install it first or copy the key for manual setup.',
     emptyTitle: 'No services yet',
@@ -718,6 +717,90 @@ export default {
       daily: '{value} USD token value per day',
       weekly: '{value} USD token value per week',
       monthly: '{value} USD token value per month'
+    },
+    guide: {
+      title: 'Service Setup Guide',
+      description: 'Choose the AI client you want to use, then follow the steps to download the client and configure this service.',
+      detectionNote:
+        'A web page cannot reliably tell which local AI clients are installed on your computer. Browsers cannot enumerate local apps for security reasons, so this panel can only remember install states that you confirm manually.',
+      chooseClientTitle: 'Choose the AI client you want to use',
+      chooseClientHint: 'Codex, Cursor, OpenCode, Qoder',
+      download: 'Download',
+      openDownloadPage: 'Open download page',
+      stepsTitle: '{client} setup steps',
+      currentStep: 'Step {index} / {total}',
+      configTitle: 'Configuration',
+      haveInstalled: 'I have installed it',
+      installStatusHint:
+        'The install status is a manual confirmation saved in this browser. Reliable local detection would require a desktop app or browser extension.',
+      status: {
+        unknown: 'Cannot auto-detect',
+        confirmed: 'Confirmed installed'
+      },
+      stepTitles: {
+        download: 'Download client',
+        configure: 'Configure service',
+        start: 'Start using',
+        verify: 'Verify connection'
+      },
+      stepSummaries: {
+        start: 'Open the client and send a test request',
+        verify: 'Confirm the connection with one test message',
+        codex: {
+          download: 'Install the Codex CLI',
+          configure: 'Write Codex config and key'
+        },
+        cursor: {
+          download: 'Install the Cursor editor',
+          configure: 'Add an OpenAI-compatible service'
+        },
+        opencode: {
+          download: 'Install the OpenCode CLI',
+          configure: 'Write opencode.json'
+        },
+        qoder: {
+          download: 'Install Qoder',
+          configure: 'Add an OpenAI-compatible service'
+        }
+      },
+      clients: {
+        codex: {
+          description: 'Best for using the official Codex workflow directly from your terminal.',
+          installHint: 'CLI client',
+          steps: {
+            download: 'Open the official download page or install Codex with your package manager. Return here after installation.',
+            configure: 'Write the following content into the Codex config directory. The service URL and API key are already filled in.',
+            start: 'Open a terminal, run Codex, and send a small request to confirm the service works.'
+          }
+        },
+        cursor: {
+          description: 'Best for using a custom OpenAI-compatible service inside Cursor.',
+          installHint: 'Desktop editor',
+          steps: {
+            download: 'Download and install Cursor. The browser cannot confirm installation, so use the confirmation button after installing.',
+            configure: 'Add an OpenAI-compatible service in Cursor settings, then enter the Base URL and API key below.',
+            verify: 'Start a new chat or coding request and confirm that the response comes back through this service.'
+          }
+        },
+        opencode: {
+          description: 'Best for terminal workflows where providers are managed in JSON.',
+          installHint: 'CLI client',
+          steps: {
+            download: 'Install the OpenCode client, then continue with the config file.',
+            configure: 'Merge the following config into ~/.config/opencode/opencode.json or opencode.jsonc.',
+            start: 'Run opencode, choose the configured provider, and send a test request.'
+          }
+        },
+        qoder: {
+          description: 'Best for connecting Qoder to a custom OpenAI-compatible service.',
+          installHint: 'Desktop client',
+          steps: {
+            download: 'Download and install Qoder. This web page can open the download page but cannot read your local app list.',
+            configure: 'In Qoder model or provider settings, add an OpenAI-compatible service and enter the information below.',
+            verify: 'Open a project and send a test request to confirm the service configuration works.'
+          }
+        }
+      }
     }
   },
 

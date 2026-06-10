@@ -3,8 +3,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -62,12 +60,6 @@ type UpdateAPIKeyRequest struct {
 	RateLimit1d         *float64 `json:"rate_limit_1d"`
 	RateLimit7d         *float64 `json:"rate_limit_7d"`
 	ResetRateLimitUsage *bool    `json:"reset_rate_limit_usage"` // 重置限速用量
-}
-
-type BootstrapScriptRequest struct {
-	GroupID *int64 `json:"group_id" binding:"required"`
-	OS      string `json:"os"`
-	BaseURL string `json:"base_url" binding:"required"`
 }
 
 // List handles listing user's API keys with pagination
@@ -189,36 +181,6 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 		}
 		return dto.APIKeyFromService(key), nil
 	})
-}
-
-// BootstrapScript returns a platform-specific setup script for one-click service setup.
-// POST /api/v1/keys/bootstrap
-func (h *APIKeyHandler) BootstrapScript(c *gin.Context) {
-	subject, ok := middleware2.GetAuthSubjectFromContext(c)
-	if !ok {
-		response.Unauthorized(c, "User not authenticated")
-		return
-	}
-
-	var req BootstrapScriptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request: "+err.Error())
-		return
-	}
-
-	result, err := h.apiKeyService.GenerateBootstrapScript(c.Request.Context(), subject.UserID, service.BootstrapScriptRequest{
-		GroupID: req.GroupID,
-		OS:      req.OS,
-		BaseURL: req.BaseURL,
-	})
-	if err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, result.Filename))
-	c.Header("X-Content-Type-Options", "nosniff")
-	c.Data(http.StatusOK, result.ContentType, result.Content)
 }
 
 // Update handles updating an API key

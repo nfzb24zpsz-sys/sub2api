@@ -86,6 +86,13 @@
       </div>
     </div>
 
+    <ServiceSetupGuideModal
+      :show="showSetupGuide"
+      :group="selectedGroupForGuide"
+      :api-key="selectedApiKeyForGuide"
+      :base-url="publicBaseUrl"
+      @close="showSetupGuide = false"
+    />
   </AppLayout>
 </template>
 
@@ -100,6 +107,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
+import ServiceSetupGuideModal from '@/components/services/ServiceSetupGuideModal.vue'
 import type { Group, UserSubscription } from '@/types'
 
 interface ServiceRow {
@@ -121,12 +129,14 @@ const userGroupRates = ref<Record<number, number>>({})
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
 const loadError = ref('')
+const showSetupGuide = ref(false)
+const selectedGroupForGuide = ref<Group | null>(null)
+const selectedApiKeyForGuide = ref('')
 
 const balance = computed(() => authStore.user?.balance ?? 0)
+const publicBaseUrl = computed(() => appStore.apiBaseUrl || window.location.origin)
 
-const credential = useServiceCredential({
-  getBaseUrl: () => appStore.apiBaseUrl || window.location.origin,
-})
+const credential = useServiceCredential()
 
 const serviceRows = computed<ServiceRow[]>(() => {
   return groups.value
@@ -227,8 +237,15 @@ function formatSubscriptionLimit(group: Group): string {
   return ''
 }
 
-function handleOpen(row: ServiceRow) {
-  credential.downloadBootstrapScript(row.group)
+async function handleOpen(row: ServiceRow) {
+  try {
+    const key = await credential.ensureCredential(row.group)
+    selectedGroupForGuide.value = row.group
+    selectedApiKeyForGuide.value = key.key
+    showSetupGuide.value = true
+  } catch (error: any) {
+    appStore.showError(error?.response?.data?.detail || t('services.openFailed'))
+  }
 }
 
 function goToPurchase(row: ServiceRow) {
