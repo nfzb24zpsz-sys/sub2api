@@ -21,7 +21,7 @@
         </div>
       </section>
 
-      <section class="space-y-3">
+      <section v-if="phase === 'select'" class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
             {{ t('services.guide.chooseClientTitle') }}
@@ -32,38 +32,24 @@
         </div>
 
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div
+          <article
             v-for="client in clients"
             :key="client.id"
-            role="button"
-            tabindex="0"
-            class="group flex h-full min-h-[148px] flex-col gap-3 rounded-2xl border p-4 text-left transition"
-            :class="selectedClientId === client.id
-              ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10'
-              : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-primary-500/60 dark:hover:bg-dark-700'"
-            @click="selectClient(client.id)"
-            @keydown.enter.prevent="selectClient(client.id)"
-            @keydown.space.prevent="selectClient(client.id)"
+            class="flex min-h-[184px] flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-primary-300 hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-primary-500/60 dark:hover:bg-dark-700"
           >
             <div class="flex items-center justify-between gap-3">
-              <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-900">
-                <component :is="client.icon" class="h-6 w-6" />
+              <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-900">
+                <img :src="client.icon" :alt="client.label" class="h-full w-full object-contain p-1" />
               </div>
-              <span
-                class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                :class="getClientStatusClass(client.id)"
-              >
+              <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium" :class="getClientStatusClass(client.id)">
                 {{ getClientStatusText(client.id) }}
               </span>
             </div>
 
             <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <h4 class="text-base font-semibold text-gray-950 dark:text-white">
-                  {{ client.label }}
-                </h4>
-                <Icon v-if="selectedClientId === client.id" name="checkCircle" size="sm" class="text-primary-500" />
-              </div>
+              <h4 class="text-base font-semibold text-gray-950 dark:text-white">
+                {{ client.label }}
+              </h4>
               <p class="text-sm leading-6 text-gray-500 dark:text-gray-400">
                 {{ client.description }}
               </p>
@@ -73,37 +59,42 @@
               <span class="text-xs text-gray-400 dark:text-gray-500">
                 {{ client.installHint }}
               </span>
-              <button
-                v-if="client.downloadUrl"
-                class="inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                @click.stop="openUrl(client.downloadUrl)"
-              >
-                <Icon name="externalLink" size="sm" />
-                {{ t('services.guide.download') }}
+              <button class="btn btn-primary btn-sm" @click="beginSetup(client.id)">
+                {{ t('services.guide.configure') }}
               </button>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 
-      <section v-if="selectedClient" class="space-y-3">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-              {{ t('services.guide.stepsTitle', { client: selectedClient.label }) }}
-            </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ selectedClient.description }}
-            </p>
+      <section v-else-if="selectedClient" class="space-y-3">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-900">
+              <img :src="selectedClient.icon" :alt="selectedClient.label" class="h-full w-full object-contain p-1" />
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                {{ t('services.guide.stepsTitle', { client: selectedClient.label }) }}
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ selectedClient.description }}
+              </p>
+            </div>
           </div>
+
           <div class="flex items-center gap-2">
+            <button class="btn btn-secondary btn-sm" @click="backToSelect">
+              <Icon name="chevronLeft" size="sm" />
+              {{ t('common.back') }}
+            </button>
             <button
               class="btn btn-secondary btn-sm"
               :disabled="currentStep === 0"
               @click="currentStep = Math.max(0, currentStep - 1)"
             >
               <Icon name="chevronLeft" size="sm" />
-              {{ t('common.back') }}
+              {{ t('services.guide.previousStep') }}
             </button>
             <button
               class="btn btn-primary btn-sm"
@@ -152,10 +143,7 @@
                   {{ currentStepStep.title }}
                 </h4>
               </div>
-              <button
-                class="btn btn-secondary btn-sm"
-                @click="markInstalled(selectedClient.id)"
-              >
+              <button class="btn btn-secondary btn-sm" @click="markInstalled(selectedClient.id)">
                 {{ t('services.guide.haveInstalled') }}
               </button>
             </div>
@@ -196,11 +184,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref, watch, type Component } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
+import codexIcon from '@/assets/client-icons/codex-color.png'
+import cursorIcon from '@/assets/client-icons/cursor.png'
+import openCodeIcon from '@/assets/client-icons/opencode.png'
+import qoderIcon from '@/assets/client-icons/qoder.png'
 import type { Group } from '@/types'
 
 interface Props {
@@ -227,15 +219,17 @@ interface ClientOption {
   label: string
   description: string
   installHint: string
-  icon: Component
-  downloadUrl?: string
+  icon: string
   steps: ClientStep[]
 }
+
+type Phase = 'select' | 'setup'
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
+const phase = ref<Phase>('select')
 const selectedClientId = ref('codex')
 const currentStep = ref(0)
 const confirmedInstalledClientIds = ref<Set<string>>(new Set())
@@ -244,6 +238,7 @@ watch(
   () => props.show,
   (visible) => {
     if (visible) {
+      phase.value = 'select'
       selectedClientId.value = 'codex'
       currentStep.value = 0
       confirmedInstalledClientIds.value = new Set(
@@ -282,8 +277,7 @@ const clients = computed<ClientOption[]>(() => [
     label: 'Codex',
     description: t('services.guide.clients.codex.description'),
     installHint: t('services.guide.clients.codex.installHint'),
-    icon: terminalIcon,
-    downloadUrl: 'https://openai.com/codex',
+    icon: codexIcon,
     steps: buildCodexSteps(),
   },
   {
@@ -292,7 +286,6 @@ const clients = computed<ClientOption[]>(() => [
     description: t('services.guide.clients.cursor.description'),
     installHint: t('services.guide.clients.cursor.installHint'),
     icon: cursorIcon,
-    downloadUrl: 'https://cursor.com',
     steps: buildCursorSteps(),
   },
   {
@@ -301,7 +294,6 @@ const clients = computed<ClientOption[]>(() => [
     description: t('services.guide.clients.opencode.description'),
     installHint: t('services.guide.clients.opencode.installHint'),
     icon: openCodeIcon,
-    downloadUrl: 'https://opencode.ai',
     steps: buildOpenCodeSteps(),
   },
   {
@@ -310,7 +302,6 @@ const clients = computed<ClientOption[]>(() => [
     description: t('services.guide.clients.qoder.description'),
     installHint: t('services.guide.clients.qoder.installHint'),
     icon: qoderIcon,
-    downloadUrl: 'https://qoder.com',
     steps: buildQoderSteps(),
   },
 ])
@@ -318,18 +309,19 @@ const clients = computed<ClientOption[]>(() => [
 const selectedClient = computed(() => clients.value.find((client) => client.id === selectedClientId.value) || clients.value[0])
 const currentStepStep = computed(() => selectedClient.value.steps[Math.min(currentStep.value, selectedClient.value.steps.length - 1)])
 
-function selectClient(clientId: string) {
+function beginSetup(clientId: string) {
   selectedClientId.value = clientId
   currentStep.value = 0
+  phase.value = 'setup'
+}
+
+function backToSelect() {
+  phase.value = 'select'
 }
 
 function markInstalled(clientId: string) {
   localStorage.setItem(`service-guide-installed:${clientId}`, '1')
   confirmedInstalledClientIds.value = new Set([...confirmedInstalledClientIds.value, clientId])
-}
-
-function openUrl(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 function getClientStatusText(clientId: string): string {
@@ -463,37 +455,5 @@ API Key: ${props.apiKey}`,
       config: 'Open a new project and run a small prompt test.',
     },
   ]
-}
-
-const terminalIcon = {
-  render() {
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'm6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6A2.25 2.25 0 0 0 18.75 3.75H5.25A2.25 2.25 0 0 0 3 6v12A2.25 2.25 0 0 0 5.25 21.75Z' })
-    ])
-  }
-}
-
-const cursorIcon = {
-  render() {
-    return h('svg', { viewBox: '0 0 24 24', fill: 'currentColor' }, [
-      h('path', { d: 'M4 3.5l15 8.5-6.5 1.6L11 20l-1.8-.7L4 3.5z' })
-    ])
-  }
-}
-
-const openCodeIcon = {
-  render() {
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M7.5 8.25 3.75 12l3.75 3.75M16.5 8.25 20.25 12l-3.75 3.75M14.25 4.5 9.75 19.5' })
-    ])
-  }
-}
-
-const qoderIcon = {
-  render() {
-    return h('svg', { viewBox: '0 0 24 24', fill: 'currentColor' }, [
-      h('path', { d: 'M12 2.5 21 7.5v9L12 21.5 3 16.5v-9L12 2.5zm0 2.2L5 8.3v7.4l7 3.9 7-3.9V8.3l-7-3.6z' })
-    ])
-  }
 }
 </script>

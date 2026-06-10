@@ -725,6 +725,8 @@ export default {
       chooseClientTitle: '选择你要使用的 AI 客户端',
       chooseClientHint: 'Codex、Cursor、OpenCode、Qoder',
       download: '下载',
+      configure: '配置',
+      previousStep: '上一步',
       openDownloadPage: '打开下载页',
       stepsTitle: '{client} 配置步骤',
       currentStep: '第 {index} / {total} 步',

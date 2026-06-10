@@ -726,6 +726,8 @@ export default {
       chooseClientTitle: 'Choose the AI client you want to use',
       chooseClientHint: 'Codex, Cursor, OpenCode, Qoder',
       download: 'Download',
+      configure: 'Configure',
+      previousStep: 'Previous',
       openDownloadPage: 'Open download page',
       stepsTitle: '{client} setup steps',
       currentStep: 'Step {index} / {total}',
