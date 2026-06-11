@@ -16,7 +16,7 @@ POSTGRES_IMAGE="${POSTGRES_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/postgres:18-alpine}"
 REDIS_IMAGE="${REDIS_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/redis:8-alpine}"
 POSTGRES_MAINTENANCE_IMAGE="${POSTGRES_MAINTENANCE_IMAGE:-$POSTGRES_IMAGE}"
 
-SCRIPT_VERSION="2026-06-11-alinux-yum-explicit-baseurl"
+SCRIPT_VERSION="2026-06-11-ubuntu-only"
 echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
 
 if [ -z "$IMAGE" ]; then
@@ -64,17 +64,8 @@ install_basic_tools() {
     return
   fi
 
-  if command -v apt-get >/dev/null 2>&1; then
-    run_as_root apt-get update -y
-    run_as_root apt-get install -y curl openssl ca-certificates
-  elif command -v yum >/dev/null 2>&1; then
-    run_as_root yum install -y curl openssl ca-certificates
-  elif command -v dnf >/dev/null 2>&1; then
-    run_as_root dnf install -y curl openssl ca-certificates
-  else
-    echo "[ERROR] 未识别系统包管理器，请手动安装 curl 和 openssl"
-    exit 1
-  fi
+  run_as_root apt-get update -y
+  run_as_root apt-get install -y curl openssl ca-certificates
 }
 
 probe_url() {
@@ -105,25 +96,6 @@ get_os_release_value() {
   awk -F= -v target="$key" '$1 == target { gsub(/^"|"$/, "", $2); print $2; exit }' /etc/os-release
 }
 
-get_centos_compat_version() {
-  local os_id version_id
-  os_id="$(get_os_release_value ID)"
-  version_id="$(get_os_release_value VERSION_ID)"
-  version_id="${version_id%%.*}"
-
-  case "$os_id" in
-    alinux|alios|alibaba)
-      case "$version_id" in
-        2) echo "7" ;;
-        3) echo "8" ;;
-        4) echo "9" ;;
-        *) echo "$version_id" ;;
-      esac
-      ;;
-    *) echo "$version_id" ;;
-  esac
-}
-
 get_deb_arch() {
   case "$(dpkg --print-architecture 2>/dev/null || uname -m)" in
     amd64|x86_64) echo "amd64" ;;
@@ -143,12 +115,7 @@ start_docker_service() {
 }
 
 install_docker_via_aliyun_apt() {
-  local distro
-  local codename
-  local arch
-  local mirror_repo
-  local mirror_key_url
-  local official_key_url
+  local distro codename arch mirror_repo mirror_key_url official_key_url
 
   distro="$(get_os_release_value ID)"
   codename="$(get_os_release_value VERSION_CODENAME)"
@@ -158,14 +125,6 @@ install_docker_via_aliyun_apt() {
     echo "[WARN] 无法识别当前 apt 系统的发行版或代号，跳过阿里云 Docker 源安装"
     return 1
   fi
-
-  case "$distro" in
-    ubuntu|debian) ;;
-    *)
-      echo "[WARN] 当前 apt 系统发行版为 $distro，阿里云 Docker 源安装仅对 ubuntu/debian 启用"
-      return 1
-      ;;
-  esac
 
   mirror_repo="https://mirrors.aliyun.com/docker-ce/linux/${distro}"
   mirror_key_url="${mirror_repo}/gpg"
@@ -220,33 +179,6 @@ install_docker_via_apt_fallback() {
   echo "[WARN] Compose package installation skipped; will rely on whichever compose command is already available"
 }
 
-install_docker_via_aliyun_yum() {
-  local os_id centos_ver rpm_arch repo_baseurl
-
-  os_id="$(get_os_release_value ID)"
-  centos_ver="$(get_centos_compat_version)"
-  rpm_arch="$(uname -m)"
-  repo_baseurl="https://mirrors.aliyun.com/docker-ce/linux/centos/${centos_ver}/${rpm_arch}/stable"
-
-  echo "[INFO] Install Docker CE via Aliyun yum mirror: os=${os_id}, centos_compat=${centos_ver}, arch=${rpm_arch}"
-  report_probe "Aliyun Docker yum repo" "${repo_baseurl}/" || return 1
-
-  # Write repo file with explicit baseurl to avoid $releasever resolving to alinux version number
-  run_as_root rm -f /etc/yum.repos.d/docker-ce.repo
-  printf '[docker-ce-stable]\nname=Docker CE Stable - %s\nbaseurl=%s\nenabled=1\ngpgcheck=0\n' \
-    "$rpm_arch" "$repo_baseurl" \
-    | run_as_root tee /etc/yum.repos.d/docker-ce-aliyun.repo > /dev/null
-
-  if command -v dnf >/dev/null 2>&1; then
-    run_as_root dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-  elif command -v yum >/dev/null 2>&1; then
-    run_as_root yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-  else
-    echo "[WARN] yum/dnf not found"
-    return 1
-  fi
-}
-
 install_docker_if_needed() {
   if command -v docker >/dev/null 2>&1; then
     echo "[INFO] Docker already installed"
@@ -256,26 +188,11 @@ install_docker_if_needed() {
   echo "[INFO] Docker not found, installing..."
   install_basic_tools
 
-  if command -v apt-get >/dev/null 2>&1; then
-    if install_docker_via_aliyun_apt; then
-      echo "[INFO] Docker installed from Aliyun mirror"
-    else
-      echo "[WARN] Aliyun mirror installation failed, trying distro fallback packages"
-      install_docker_via_apt_fallback
-    fi
-  elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
-    if install_docker_via_aliyun_yum; then
-      echo "[INFO] Docker installed via Aliyun yum mirror"
-    else
-      echo "[WARN] Aliyun yum installation failed, falling back to get.docker.com"
-      report_probe "get.docker.com" "https://get.docker.com" || true
-      report_probe "download.docker.com" "https://download.docker.com" || true
-      curl -fsSL https://get.docker.com | run_as_root sh
-    fi
+  if install_docker_via_aliyun_apt; then
+    echo "[INFO] Docker installed from Aliyun mirror"
   else
-    report_probe "get.docker.com" "https://get.docker.com" || true
-    report_probe "download.docker.com" "https://download.docker.com" || true
-    curl -fsSL https://get.docker.com | run_as_root sh
+    echo "[WARN] Aliyun mirror installation failed, trying distro fallback packages"
+    install_docker_via_apt_fallback
   fi
 
   start_docker_service
