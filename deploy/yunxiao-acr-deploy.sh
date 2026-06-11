@@ -16,7 +16,7 @@ POSTGRES_IMAGE="${POSTGRES_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/postgres:18-alpine}"
 REDIS_IMAGE="${REDIS_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/redis:8-alpine}"
 POSTGRES_MAINTENANCE_IMAGE="${POSTGRES_MAINTENANCE_IMAGE:-$POSTGRES_IMAGE}"
 
-SCRIPT_VERSION="2026-06-11-alinux-yum-docker"
+SCRIPT_VERSION="2026-06-11-alinux-yum-explicit-baseurl"
 echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
 
 if [ -z "$IMAGE" ]; then
@@ -103,6 +103,25 @@ get_os_release_value() {
   fi
 
   awk -F= -v target="$key" '$1 == target { gsub(/^"|"$/, "", $2); print $2; exit }' /etc/os-release
+}
+
+get_centos_compat_version() {
+  local os_id version_id
+  os_id="$(get_os_release_value ID)"
+  version_id="$(get_os_release_value VERSION_ID)"
+  version_id="${version_id%%.*}"
+
+  case "$os_id" in
+    alinux|alios|alibaba)
+      case "$version_id" in
+        2) echo "7" ;;
+        3) echo "8" ;;
+        4) echo "9" ;;
+        *) echo "$version_id" ;;
+      esac
+      ;;
+    *) echo "$version_id" ;;
+  esac
 }
 
 get_deb_arch() {
@@ -202,21 +221,25 @@ install_docker_via_apt_fallback() {
 }
 
 install_docker_via_aliyun_yum() {
-  local os_id
+  local os_id centos_ver rpm_arch repo_baseurl
+
   os_id="$(get_os_release_value ID)"
+  centos_ver="$(get_centos_compat_version)"
+  rpm_arch="$(uname -m)"
+  repo_baseurl="https://mirrors.aliyun.com/docker-ce/linux/centos/${centos_ver}/${rpm_arch}/stable"
 
-  local mirror_repo_url="https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo"
+  echo "[INFO] Install Docker CE via Aliyun yum mirror: os=${os_id}, centos_compat=${centos_ver}, arch=${rpm_arch}"
+  report_probe "Aliyun Docker yum repo" "${repo_baseurl}/" || return 1
 
-  echo "[INFO] Install Docker CE via Aliyun yum mirror: os=${os_id}"
-  report_probe "Aliyun Docker yum repo" "https://mirrors.aliyun.com/docker-ce/linux/centos/" || return 1
+  # Write repo file with explicit baseurl to avoid $releasever resolving to alinux version number
+  run_as_root rm -f /etc/yum.repos.d/docker-ce.repo
+  printf '[docker-ce-stable]\nname=Docker CE Stable - %s\nbaseurl=%s\nenabled=1\ngpgcheck=0\n' \
+    "$rpm_arch" "$repo_baseurl" \
+    | run_as_root tee /etc/yum.repos.d/docker-ce-aliyun.repo > /dev/null
 
   if command -v dnf >/dev/null 2>&1; then
-    run_as_root dnf install -y dnf-plugins-core
-    run_as_root curl -fsSL "$mirror_repo_url" -o /etc/yum.repos.d/docker-ce.repo
     run_as_root dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   elif command -v yum >/dev/null 2>&1; then
-    run_as_root yum install -y yum-utils
-    run_as_root curl -fsSL "$mirror_repo_url" -o /etc/yum.repos.d/docker-ce.repo
     run_as_root yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   else
     echo "[WARN] yum/dnf not found"
