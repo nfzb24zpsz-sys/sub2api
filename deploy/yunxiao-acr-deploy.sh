@@ -16,7 +16,7 @@ POSTGRES_IMAGE="${POSTGRES_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/postgres:18-alpine}"
 REDIS_IMAGE="${REDIS_IMAGE:-${DOCKERHUB_IMAGE_PREFIX}/redis:8-alpine}"
 POSTGRES_MAINTENANCE_IMAGE="${POSTGRES_MAINTENANCE_IMAGE:-$POSTGRES_IMAGE}"
 
-SCRIPT_VERSION="2026-06-09-dockerhub-mirror-images"
+SCRIPT_VERSION="2026-06-11-alinux-yum-docker"
 echo "[INFO] Yunxiao deploy script version: $SCRIPT_VERSION"
 
 if [ -z "$IMAGE" ]; then
@@ -201,6 +201,29 @@ install_docker_via_apt_fallback() {
   echo "[WARN] Compose package installation skipped; will rely on whichever compose command is already available"
 }
 
+install_docker_via_aliyun_yum() {
+  local os_id
+  os_id="$(get_os_release_value ID)"
+
+  local mirror_repo_url="https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo"
+
+  echo "[INFO] Install Docker CE via Aliyun yum mirror: os=${os_id}"
+  report_probe "Aliyun Docker yum repo" "https://mirrors.aliyun.com/docker-ce/linux/centos/" || return 1
+
+  if command -v dnf >/dev/null 2>&1; then
+    run_as_root dnf install -y dnf-plugins-core
+    run_as_root curl -fsSL "$mirror_repo_url" -o /etc/yum.repos.d/docker-ce.repo
+    run_as_root dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  elif command -v yum >/dev/null 2>&1; then
+    run_as_root yum install -y yum-utils
+    run_as_root curl -fsSL "$mirror_repo_url" -o /etc/yum.repos.d/docker-ce.repo
+    run_as_root yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  else
+    echo "[WARN] yum/dnf not found"
+    return 1
+  fi
+}
+
 install_docker_if_needed() {
   if command -v docker >/dev/null 2>&1; then
     echo "[INFO] Docker already installed"
@@ -216,6 +239,15 @@ install_docker_if_needed() {
     else
       echo "[WARN] Aliyun mirror installation failed, trying distro fallback packages"
       install_docker_via_apt_fallback
+    fi
+  elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+    if install_docker_via_aliyun_yum; then
+      echo "[INFO] Docker installed via Aliyun yum mirror"
+    else
+      echo "[WARN] Aliyun yum installation failed, falling back to get.docker.com"
+      report_probe "get.docker.com" "https://get.docker.com" || true
+      report_probe "download.docker.com" "https://download.docker.com" || true
+      curl -fsSL https://get.docker.com | run_as_root sh
     fi
   else
     report_probe "get.docker.com" "https://get.docker.com" || true
