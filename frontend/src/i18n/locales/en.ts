@@ -742,6 +742,7 @@ export default {
         downloadedCodexNext: 'I downloaded Codex, continue',
         openCcSwitchDownload: 'Download CC-Switch',
         downloadedCcSwitchNext: 'I downloaded CC-Switch, continue',
+        manualInstead: 'Skip CC-Switch, configure manually',
         configureAiEnvironment: 'Configure AI environment',
         configuredNext: 'Configuration done, continue',
         genericNext: 'Continue',

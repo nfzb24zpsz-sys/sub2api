@@ -397,6 +397,18 @@
                   {{ footerActions.next.label }}
                   <Icon v-if="footerActions.next.icon" :name="footerActions.next.icon" size="sm" />
                 </component>
+
+                <component
+                  v-if="footerActions.secondaryNext"
+                  :is="footerActions.secondaryNext.href ? 'a' : 'button'"
+                  v-bind="actionAttrs(footerActions.secondaryNext)"
+                  :class="actionButtonClass(footerActions.secondaryNext)"
+                  class="lg:col-start-3"
+                  @click="footerActions.secondaryNext.onClick?.()"
+                >
+                  {{ footerActions.secondaryNext.label }}
+                  <Icon v-if="footerActions.secondaryNext.icon" :name="footerActions.secondaryNext.icon" size="sm" />
+                </component>
               </div>
             </div>
           </div>
@@ -495,9 +507,11 @@ interface FooterActions {
   previous: FooterAction
   action?: FooterAction
   next: FooterAction
+  secondaryNext?: FooterAction
 }
 
 type Phase = 'select' | 'setup'
+type CodexSetupPath = 'cc-switch' | 'manual'
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
@@ -505,6 +519,7 @@ const { t } = useI18n()
 const phase = ref<Phase>('select')
 const selectedClientId = ref('codex')
 const currentStep = ref(0)
+const codexSetupPath = ref<CodexSetupPath>('cc-switch')
 const ccSwitchImportModel = OPENAI_CC_SWITCH_CODEX_MODEL
 
 watch(
@@ -642,11 +657,19 @@ const currentStepStep = computed(() => {
 })
 
 const currentStepBadge = computed(() => {
-  if (selectedClientId.value !== 'codex' || currentStepStep.value?.id !== 'configureService') {
+  if (selectedClientId.value !== 'codex') {
     return ''
   }
 
-  return t('services.guide.modeBadges.ccSwitch')
+  if (currentStepStep.value?.id === 'configureService') {
+    return t('services.guide.modeBadges.ccSwitch')
+  }
+
+  if (currentStepStep.value?.id === 'manualConfigure') {
+    return t('services.guide.modeBadges.manual')
+  }
+
+  return ''
 })
 
 const footerActions = computed(() => {
@@ -665,11 +688,13 @@ function resetGuide() {
   phase.value = 'select'
   selectedClientId.value = 'codex'
   currentStep.value = 0
+  codexSetupPath.value = 'cc-switch'
 }
 
 function beginSetup(clientId: string) {
   selectedClientId.value = clientId
   currentStep.value = 0
+  codexSetupPath.value = 'cc-switch'
   phase.value = 'setup'
 }
 
@@ -680,6 +705,11 @@ function backToSelect() {
 function goToNextStep() {
   const steps = selectedClient.value?.steps || []
   currentStep.value = Math.min(currentStep.value + 1, Math.max(steps.length - 1, 0))
+}
+
+function continueWithCodexPath(path: CodexSetupPath) {
+  codexSetupPath.value = path
+  goToNextStep()
 }
 
 function goToPreviousStep() {
@@ -713,7 +743,7 @@ function actionButtonClass(action: FooterAction) {
     return `${base} btn-primary`
   }
   if (action.variant === 'action') {
-    return `${base} border border-primary-200 bg-white text-primary-700 shadow-sm hover:border-primary-300 hover:bg-primary-50 dark:border-primary-500/30 dark:bg-dark-800 dark:text-primary-200 dark:hover:bg-primary-500/10`
+    return `${base} bg-gradient-to-r from-primary-600 to-sky-500 text-white shadow-lg shadow-primary-500/30 hover:from-primary-700 hover:to-sky-600 hover:shadow-xl hover:shadow-primary-500/35 dark:shadow-primary-500/20`
   }
   return `${base} btn-secondary`
 }
@@ -839,7 +869,14 @@ function buildCodexFooterActions(stepId: string): FooterActions {
         label: t('services.guide.actions.downloadedCcSwitchNext'),
         variant: 'primary',
         icon: 'arrowRight',
-        onClick: goToNextStep,
+        onClick: () => continueWithCodexPath('cc-switch'),
+      },
+      secondaryNext: {
+        id: 'manual-config-next',
+        label: t('services.guide.actions.manualInstead'),
+        variant: 'secondary',
+        icon: 'arrowRight',
+        onClick: () => continueWithCodexPath('manual'),
       },
     }
   }
@@ -856,6 +893,20 @@ function buildCodexFooterActions(stepId: string): FooterActions {
       },
       next: {
         id: 'configure-next',
+        label: t('services.guide.actions.configuredNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
+  }
+
+  if (stepId === 'manualConfigure') {
+    return {
+      previous,
+      action: undefined,
+      next: {
+        id: 'manual-configure-next',
         label: t('services.guide.actions.configuredNext'),
         variant: 'primary',
         icon: 'arrowRight',
@@ -918,6 +969,21 @@ function buildGenericFooterActions(): FooterActions {
 
 function buildCodexSteps(): ClientStep[] {
   const manualConfigFiles = buildCodexManualConfigFiles()
+  const configureStep: ClientStep = codexSetupPath.value === 'manual'
+    ? {
+        id: 'manualConfigure',
+        title: t('services.guide.codexSteps.manualConfigure.title'),
+        summary: t('services.guide.codexSteps.manualConfigure.summary'),
+        description: t('services.guide.clients.codex.steps.manualConfigure'),
+        manualConfigFiles,
+      }
+    : {
+        id: 'configureService',
+        title: t('services.guide.codexSteps.importService.title'),
+        summary: t('services.guide.codexSteps.importService.summary'),
+        description: t('services.guide.clients.codex.steps.importService'),
+        ccSwitchImport: true,
+      }
 
   return [
     {
@@ -936,14 +1002,7 @@ function buildCodexSteps(): ClientStep[] {
       description: t('services.guide.clients.codex.steps.prepareCcSwitch'),
       ccSwitchDownload: true,
     },
-    {
-      id: 'configureService',
-      title: t('services.guide.codexSteps.importService.title'),
-      summary: t('services.guide.codexSteps.importService.summary'),
-      description: t('services.guide.clients.codex.steps.importService'),
-      ccSwitchImport: true,
-      manualConfigFiles,
-    },
+    configureStep,
     {
       id: 'start',
       title: t('services.guide.stepTitles.start'),

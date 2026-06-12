@@ -741,6 +741,7 @@ export default {
         downloadedCodexNext: '我已下载 Codex，进入下一步',
         openCcSwitchDownload: '下载 CC-Switch',
         downloadedCcSwitchNext: '我已下载 CC-Switch，进入下一步',
+        manualInstead: '不想下载 CC-Switch，自己配置',
         configureAiEnvironment: '配置AI环境',
         configuredNext: '配置完毕，进入下一步',
         genericNext: '进入下一步',
