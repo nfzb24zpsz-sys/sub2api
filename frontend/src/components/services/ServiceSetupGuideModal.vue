@@ -68,13 +68,6 @@
       </section>
 
       <section v-else-if="selectedClient" class="space-y-5">
-        <div>
-          <button class="btn btn-secondary btn-sm" @click="backToSelect">
-            <Icon name="arrowLeft" size="sm" />
-            {{ t('common.back') }}
-          </button>
-        </div>
-
         <div class="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
           <aside class="space-y-4 rounded-[28px] border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-600 dark:bg-dark-800">
             <div class="flex items-center gap-3">
@@ -150,25 +143,6 @@
               </div>
 
               <div
-                v-if="currentStepStep.links?.length && currentStepStep.centerLinks"
-                class="flex justify-center pt-2"
-              >
-                <div class="flex w-full max-w-xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                  <a
-                    v-for="link in currentStepStep.links"
-                    :key="link.label"
-                    class="btn btn-primary btn-lg w-full justify-center sm:w-auto"
-                    :href="link.href"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Icon :name="resolveLinkIcon(link)" size="sm" />
-                    {{ link.label }}
-                  </a>
-                </div>
-              </div>
-
-              <div
                 v-if="currentStepStep.heroImage"
                 class="overflow-hidden rounded-[28px] border border-gray-200 bg-gray-50 shadow-inner dark:border-dark-600 dark:bg-dark-900"
               >
@@ -199,33 +173,9 @@
                     </p>
                   </div>
 
-                  <div class="flex w-full justify-center lg:w-auto lg:justify-end">
-                    <a
-                      class="btn btn-primary btn-lg w-full justify-center sm:w-auto"
-                      :href="detectedCcSwitchDownload.href"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Icon name="download" size="sm" />
-                      {{ detectedCcSwitchDownload.label }}
-                    </a>
+                  <div class="rounded-2xl border border-primary-200/70 bg-white/70 px-4 py-3 text-sm leading-6 text-primary-800 dark:border-primary-400/20 dark:bg-dark-800/70 dark:text-primary-100">
+                    {{ t('services.guide.ccSwitchDownload.footerHint') }}
                   </div>
-                </div>
-
-                <div
-                  v-if="showCcSwitchAlternativeLinks"
-                  class="mt-4 flex flex-wrap gap-2 border-t border-primary-200/70 pt-4 dark:border-primary-400/20"
-                >
-                  <a
-                    v-for="link in ccSwitchDownloadLinks"
-                    :key="link.os"
-                    class="btn btn-secondary btn-sm"
-                    :href="link.href"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {{ link.label }}
-                  </a>
                 </div>
               </div>
 
@@ -353,23 +303,6 @@
               </div>
 
               <div
-                v-if="currentStepStep.links?.length && !currentStepStep.centerLinks"
-                class="flex flex-wrap gap-3"
-              >
-                <a
-                  v-for="link in currentStepStep.links"
-                  :key="link.label"
-                  class="btn btn-secondary"
-                  :href="link.href"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Icon :name="resolveLinkIcon(link)" size="sm" />
-                  {{ link.label }}
-                </a>
-              </div>
-
-              <div
                 v-if="currentStepStep.manualConfigFiles?.length"
                 class="space-y-5 rounded-[28px] border border-gray-200 bg-gray-50 p-5 dark:border-dark-600 dark:bg-dark-900"
               >
@@ -432,56 +365,38 @@
             </div>
 
             <div class="border-t border-gray-200 bg-gray-50/80 p-4 dark:border-dark-600 dark:bg-dark-900/80 md:p-6">
-              <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div class="flex flex-col gap-3 sm:flex-row">
-                  <template v-for="action in footerActions.left" :key="action.id">
-                    <a
-                      v-if="action.href"
-                      class="btn"
-                      :class="action.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-                      :href="action.href"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Icon v-if="action.icon" :name="action.icon" size="sm" />
-                      {{ action.label }}
-                    </a>
-                    <button
-                      v-else
-                      class="btn"
-                      :class="action.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-                      @click="action.onClick?.()"
-                    >
-                      <Icon v-if="action.icon" :name="action.icon" size="sm" />
-                      {{ action.label }}
-                    </button>
-                  </template>
-                </div>
+              <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] lg:items-center">
+                <component
+                  :is="footerActions.previous.href ? 'a' : 'button'"
+                  v-bind="actionAttrs(footerActions.previous)"
+                  :class="actionButtonClass(footerActions.previous)"
+                  @click="footerActions.previous.onClick?.()"
+                >
+                  <Icon v-if="footerActions.previous.icon" :name="footerActions.previous.icon" size="sm" />
+                  {{ footerActions.previous.label }}
+                </component>
 
-                <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  <template v-for="action in footerActions.right" :key="action.id">
-                    <a
-                      v-if="action.href"
-                      class="btn"
-                      :class="action.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-                      :href="action.href"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Icon v-if="action.icon" :name="action.icon" size="sm" />
-                      {{ action.label }}
-                    </a>
-                    <button
-                      v-else
-                      class="btn"
-                      :class="action.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-                      @click="action.onClick?.()"
-                    >
-                      <Icon v-if="action.icon" :name="action.icon" size="sm" />
-                      {{ action.label }}
-                    </button>
-                  </template>
-                </div>
+                <component
+                  v-if="footerActions.action"
+                  :is="footerActions.action.href ? 'a' : 'button'"
+                  v-bind="actionAttrs(footerActions.action)"
+                  :class="actionButtonClass(footerActions.action)"
+                  @click="footerActions.action.onClick?.()"
+                >
+                  <Icon v-if="footerActions.action.icon" :name="footerActions.action.icon" size="sm" />
+                  {{ footerActions.action.label }}
+                </component>
+                <div v-else class="hidden lg:block" />
+
+                <component
+                  :is="footerActions.next.href ? 'a' : 'button'"
+                  v-bind="actionAttrs(footerActions.next)"
+                  :class="actionButtonClass(footerActions.next)"
+                  @click="footerActions.next.onClick?.()"
+                >
+                  {{ footerActions.next.label }}
+                  <Icon v-if="footerActions.next.icon" :name="footerActions.next.icon" size="sm" />
+                </component>
               </div>
             </div>
           </div>
@@ -524,7 +439,7 @@ interface Emits {
   (e: 'close'): void
 }
 
-type GuideIcon = 'download' | 'externalLink' | 'link'
+type GuideIcon = 'arrowLeft' | 'arrowRight' | 'checkCircle' | 'download' | 'externalLink' | 'link'
 
 interface StepLink {
   label: string
@@ -539,7 +454,6 @@ interface ClientStep {
   description: string
   config?: string
   links?: StepLink[]
-  centerLinks?: boolean
   heroImage?: string
   heroImageAlt?: string
   ccSwitchDownload?: boolean
@@ -571,15 +485,19 @@ interface ClientOption {
 interface FooterAction {
   id: string
   label: string
-  variant: 'primary' | 'secondary'
+  variant: 'primary' | 'secondary' | 'action'
   icon?: GuideIcon
   href?: string
   onClick?: () => void
 }
 
-type Phase = 'select' | 'setup'
-type CodexSetupMode = 'cc-switch' | 'manual' | null
+interface FooterActions {
+  previous: FooterAction
+  action?: FooterAction
+  next: FooterAction
+}
 
+type Phase = 'select' | 'setup'
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
@@ -587,7 +505,6 @@ const { t } = useI18n()
 const phase = ref<Phase>('select')
 const selectedClientId = ref('codex')
 const currentStep = ref(0)
-const codexSetupMode = ref<CodexSetupMode>(null)
 const ccSwitchImportModel = OPENAI_CC_SWITCH_CODEX_MODEL
 
 watch(
@@ -661,8 +578,6 @@ const detectedCcSwitchDownload = computed(() => {
   }
 })
 
-const showCcSwitchAlternativeLinks = computed(() => detectedOs.value === 'unknown')
-
 const ccSwitchGuideImages = computed(() => [
   {
     title: t('services.guide.ccSwitchImport.guide.open.title'),
@@ -731,20 +646,12 @@ const currentStepBadge = computed(() => {
     return ''
   }
 
-  if (codexSetupMode.value === 'manual') {
-    return t('services.guide.modeBadges.manual')
-  }
-
-  if (codexSetupMode.value === 'cc-switch') {
-    return t('services.guide.modeBadges.ccSwitch')
-  }
-
-  return ''
+  return t('services.guide.modeBadges.ccSwitch')
 })
 
 const footerActions = computed(() => {
   if (!selectedClient.value || !currentStepStep.value) {
-    return { left: [] as FooterAction[], right: [] as FooterAction[] }
+    return buildEmptyFooterActions()
   }
 
   if (selectedClientId.value === 'codex') {
@@ -758,13 +665,11 @@ function resetGuide() {
   phase.value = 'select'
   selectedClientId.value = 'codex'
   currentStep.value = 0
-  codexSetupMode.value = null
 }
 
 function beginSetup(clientId: string) {
   selectedClientId.value = clientId
   currentStep.value = 0
-  codexSetupMode.value = null
   phase.value = 'setup'
 }
 
@@ -777,17 +682,40 @@ function goToNextStep() {
   currentStep.value = Math.min(currentStep.value + 1, Math.max(steps.length - 1, 0))
 }
 
-function setCodexSetupMode(mode: Exclude<CodexSetupMode, null>) {
-  codexSetupMode.value = mode
-  currentStep.value = 2
+function goToPreviousStep() {
+  if (currentStep.value <= 0) {
+    backToSelect()
+    return
+  }
+
+  currentStep.value = Math.max(currentStep.value - 1, 0)
 }
 
 function finishGuide() {
   emit('close')
 }
 
-function resolveLinkIcon(link: StepLink): GuideIcon {
-  return link.icon || 'externalLink'
+function actionAttrs(action: FooterAction) {
+  if (!action.href) {
+    return {}
+  }
+
+  return {
+    href: action.href,
+    target: '_blank',
+    rel: 'noreferrer',
+  }
+}
+
+function actionButtonClass(action: FooterAction) {
+  const base = 'btn w-full justify-center'
+  if (action.variant === 'primary') {
+    return `${base} btn-primary`
+  }
+  if (action.variant === 'action') {
+    return `${base} border border-primary-200 bg-white text-primary-700 shadow-sm hover:border-primary-300 hover:bg-primary-50 dark:border-primary-500/30 dark:bg-dark-800 dark:text-primary-200 dark:hover:bg-primary-500/10`
+  }
+  return `${base} btn-secondary`
 }
 
 function importCurrentServiceToCcSwitch() {
@@ -848,98 +776,144 @@ function stepIndexClass(index: number) {
   return 'bg-gray-200 text-gray-500 dark:bg-dark-600 dark:text-dark-300'
 }
 
-function buildCodexFooterActions(stepId: string) {
-  const left: FooterAction[] = []
-  const right: FooterAction[] = []
+function buildEmptyFooterActions(): FooterActions {
+  return {
+    previous: {
+      id: 'back-empty',
+      label: t('services.guide.actions.previousStep'),
+      variant: 'secondary',
+      icon: 'arrowLeft',
+      onClick: goToPreviousStep,
+    },
+    next: {
+      id: 'finish-empty',
+      label: t('services.guide.actions.finish'),
+      variant: 'primary',
+      icon: 'checkCircle',
+      onClick: finishGuide,
+    },
+  }
+}
+
+function buildCodexFooterActions(stepId: string): FooterActions {
+  const previous: FooterAction = {
+    id: 'previous-step',
+    label: t('services.guide.actions.previousStep'),
+    variant: 'secondary',
+    icon: 'arrowLeft',
+    onClick: goToPreviousStep,
+  }
 
   if (stepId === 'downloadCodex') {
-    right.push({
-      id: 'codex-next',
-      label: t('services.guide.actions.downloadedCodexNext'),
-      variant: 'primary',
-      onClick: goToNextStep,
-    })
-    return { left, right }
+    return {
+      previous,
+      action: {
+        id: 'open-codex-download',
+        label: t('services.guide.actions.openCodexDownload'),
+        variant: 'action',
+        icon: 'download',
+        href: 'https://openai.com/codex',
+      },
+      next: {
+        id: 'codex-next',
+        label: t('services.guide.actions.downloadedCodexNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
   }
 
   if (stepId === 'downloadCcSwitch') {
-    left.push({
-      id: 'download-cc-switch',
-      label: t('services.guide.actions.openCcSwitchDownload'),
-      variant: 'secondary',
-      icon: 'download',
-      href: detectedCcSwitchDownload.value.href,
-    })
-    right.push({
-      id: 'manual-config',
-      label: t('services.guide.actions.manualInstead'),
-      variant: 'secondary',
-      onClick: () => setCodexSetupMode('manual'),
-    })
-    right.push({
-      id: 'cc-switch-next',
-      label: t('services.guide.actions.downloadedCcSwitchNext'),
-      variant: 'primary',
-      onClick: () => setCodexSetupMode('cc-switch'),
-    })
-    return { left, right }
+    return {
+      previous,
+      action: {
+        id: 'download-cc-switch',
+        label: t('services.guide.actions.openCcSwitchDownload'),
+        variant: 'action',
+        icon: 'download',
+        href: detectedCcSwitchDownload.value.href,
+      },
+      next: {
+        id: 'cc-switch-next',
+        label: t('services.guide.actions.downloadedCcSwitchNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
   }
 
   if (stepId === 'configureService') {
-    if (codexSetupMode.value === 'cc-switch') {
-      left.push({
-        id: 'import-cc-switch',
-        label: t('services.guide.actions.importCcSwitch'),
-        variant: 'secondary',
+    return {
+      previous,
+      action: {
+        id: 'configure-ai-env',
+        label: t('services.guide.actions.configureAiEnvironment'),
+        variant: 'action',
         icon: 'link',
         onClick: importCurrentServiceToCcSwitch,
-      })
+      },
+      next: {
+        id: 'configure-next',
+        label: t('services.guide.actions.configuredNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
     }
-    right.push({
-      id: 'configure-next',
-      label: t('services.guide.actions.configuredNext'),
-      variant: 'primary',
-      onClick: goToNextStep,
-    })
-    return { left, right }
   }
 
-  right.push({
-    id: 'finish-guide',
-    label: t('services.guide.actions.finish'),
-    variant: 'primary',
-    onClick: finishGuide,
-  })
-  return { left, right }
+  return {
+    previous,
+    action: {
+      id: 'restart-codex',
+      label: t('services.guide.actions.restartCodex'),
+      variant: 'action',
+      icon: 'externalLink',
+      onClick: finishGuide,
+    },
+    next: {
+      id: 'finish-guide',
+      label: t('services.guide.actions.finish'),
+      variant: 'primary',
+      icon: 'checkCircle',
+      onClick: finishGuide,
+    },
+  }
 }
 
-function buildGenericFooterActions() {
-  const left: FooterAction[] = []
-  const right: FooterAction[] = []
+function buildGenericFooterActions(): FooterActions {
   const step = currentStepStep.value
   const steps = selectedClient.value?.steps || []
   const isLastStep = currentStep.value >= steps.length - 1
+  const primaryLink = step?.links?.[0]
 
-  if (step?.links?.length) {
-    step.links.forEach((link, index) => {
-      left.push({
-        id: `link-${index}`,
-        label: link.label,
-        variant: 'secondary',
-        icon: link.icon || 'externalLink',
-        href: link.href,
-      })
-    })
+  return {
+    previous: {
+      id: 'previous-step',
+      label: t('services.guide.actions.previousStep'),
+      variant: 'secondary',
+      icon: 'arrowLeft',
+      onClick: goToPreviousStep,
+    },
+    action: primaryLink
+      ? {
+          id: 'step-action',
+          label: primaryLink.label,
+          variant: 'action',
+          icon: primaryLink.icon || 'externalLink',
+          href: primaryLink.href,
+        }
+      : undefined,
+    next: {
+      id: isLastStep ? 'finish' : 'next',
+      label: isLastStep ? t('services.guide.actions.finish') : t('services.guide.actions.genericNext'),
+      variant: 'primary',
+      icon: isLastStep ? 'checkCircle' : 'arrowRight',
+      onClick: isLastStep ? finishGuide : goToNextStep,
+    },
   }
-
-  right.push({
-    id: isLastStep ? 'finish' : 'next',
-    label: isLastStep ? t('services.guide.actions.finish') : t('services.guide.actions.genericNext'),
-    variant: 'primary',
-    onClick: isLastStep ? finishGuide : goToNextStep,
-  })
-
-  return { left, right }
 }
 
 function buildCodexSteps(): ClientStep[] {
@@ -952,7 +926,6 @@ function buildCodexSteps(): ClientStep[] {
       summary: t('services.guide.codexSteps.downloadCodex.summary'),
       description: t('services.guide.clients.codex.steps.download'),
       links: [{ label: t('services.guide.actions.openCodexDownload'), href: 'https://openai.com/codex', icon: 'download' }],
-      centerLinks: true,
       heroImage: codexDownloadImage,
       heroImageAlt: t('services.guide.clients.codex.downloadImageAlt'),
     },
@@ -965,17 +938,11 @@ function buildCodexSteps(): ClientStep[] {
     },
     {
       id: 'configureService',
-      title: codexSetupMode.value === 'manual'
-        ? t('services.guide.codexSteps.manualConfigure.title')
-        : t('services.guide.codexSteps.importService.title'),
-      summary: codexSetupMode.value === 'manual'
-        ? t('services.guide.codexSteps.manualConfigure.summary')
-        : t('services.guide.codexSteps.importService.summary'),
-      description: codexSetupMode.value === 'manual'
-        ? t('services.guide.clients.codex.steps.manualConfigure')
-        : t('services.guide.clients.codex.steps.importService'),
-      ccSwitchImport: codexSetupMode.value === 'cc-switch',
-      manualConfigFiles: codexSetupMode.value === 'manual' ? manualConfigFiles : undefined,
+      title: t('services.guide.codexSteps.importService.title'),
+      summary: t('services.guide.codexSteps.importService.summary'),
+      description: t('services.guide.clients.codex.steps.importService'),
+      ccSwitchImport: true,
+      manualConfigFiles,
     },
     {
       id: 'start',

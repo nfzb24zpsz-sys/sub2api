@@ -737,14 +737,15 @@ export default {
         manual: 'Manual setup'
       },
       actions: {
+        previousStep: 'Back',
         openCodexDownload: 'Open Codex download page',
         downloadedCodexNext: 'I downloaded Codex, continue',
         openCcSwitchDownload: 'Download CC-Switch',
         downloadedCcSwitchNext: 'I downloaded CC-Switch, continue',
-        manualInstead: 'Skip CC-Switch, configure manually',
-        importCcSwitch: 'Import into CC-Switch',
+        configureAiEnvironment: 'Configure AI environment',
         configuredNext: 'Configuration done, continue',
         genericNext: 'Continue',
+        restartCodex: 'Restart Codex',
         finish: 'Done'
       },
       codexSteps: {
@@ -768,6 +769,7 @@ export default {
       ccSwitchDownload: {
         title: 'Download CC-Switch (Recommended)',
         description: 'After installation, import this service in one click and let CC-Switch write the required Codex configuration.',
+        footerHint: 'The download action is now in the middle button below. After downloading, use the right button to continue.',
         detected: 'Detected system: {os}',
         unknownOs: 'Unknown',
         button: 'Download for {os}',

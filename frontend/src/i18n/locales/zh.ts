@@ -736,14 +736,15 @@ export default {
         manual: '手动配置'
       },
       actions: {
+        previousStep: '返回上一步',
         openCodexDownload: '打开 Codex 下载页',
         downloadedCodexNext: '我已下载 Codex，进入下一步',
         openCcSwitchDownload: '下载 CC-Switch',
         downloadedCcSwitchNext: '我已下载 CC-Switch，进入下一步',
-        manualInstead: '不想下载 CC-Switch，自己配置',
-        importCcSwitch: '下载完成后，导入到 CC-Switch',
+        configureAiEnvironment: '配置AI环境',
         configuredNext: '配置完毕，进入下一步',
         genericNext: '进入下一步',
+        restartCodex: '重启 Codex',
         finish: '完成'
       },
       codexSteps: {
@@ -767,6 +768,7 @@ export default {
       ccSwitchDownload: {
         title: '下载 CC-Switch（推荐）',
         description: '安装后可一键导入当前服务，自动写入 Codex 所需配置。',
+        footerHint: '下载动作已经放在底部中间按钮。下载完成后，点击右侧按钮继续。',
         detected: '已识别当前系统：{os}',
         unknownOs: '未识别',
         button: '下载 {os} 版'
