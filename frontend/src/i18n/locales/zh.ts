@@ -720,8 +720,6 @@ export default {
     guide: {
       title: '服务配置引导',
       description: '选择你要使用的 AI 客户端，然后按步骤下载客户端并配置当前服务。',
-      detectionNote:
-        '网页无法可靠判断你的电脑已经安装了哪些本地 AI 客户端。浏览器出于安全原因不能枚举本机应用；这里只能记录你手动确认过的安装状态。',
       chooseClientTitle: '选择你要使用的 AI 客户端',
       chooseClientHint: 'Codex、Cursor、OpenCode、Qoder',
       download: '下载',
@@ -731,12 +729,47 @@ export default {
       stepsTitle: '{client} 配置步骤',
       currentStep: '第 {index} / {total} 步',
       configTitle: '配置内容',
-      haveInstalled: '我已安装',
-      installStatusHint:
-        '安装检测结果由你手动确认保存，仅用于本浏览器提示。后续如接入桌面端或浏览器扩展，才可以做更可靠的本机检测。',
-      status: {
-        unknown: '无法自动检测',
-        confirmed: '已确认安装'
+      ccSwitchDownload: {
+        title: '下载 CC-Switch（推荐）',
+        description: '安装后可一键导入当前服务，自动写入 Codex 所需配置。',
+        detected: '已识别当前系统：{os}',
+        unknownOs: '未识别',
+        button: '下载 {os} 版'
+      },
+      ccSwitchImport: {
+        title: '一键导入当前服务',
+        description: '点击后会打开 CC-Switch，将当前服务导入为 Codex API，默认模型为 {model}。',
+        button: '导入到 CC-Switch',
+        defaultProviderName: 'Codex API',
+        openFailed: '无法打开 CC-Switch，请先安装 CC-Switch 或检查浏览器协议权限。',
+        guide: {
+          open: {
+            title: '允许打开 CC-Switch',
+            description: '浏览器弹窗出现后，点击“打开 CC Switch”。',
+            alt: '浏览器确认打开 CC Switch 的提示'
+          },
+          import: {
+            title: '确认导入配置',
+            description: '检查服务名称、API 端点、密钥和模型，然后点击“导入”。',
+            alt: 'CC-Switch 确认导入供应商配置界面'
+          },
+          enable: {
+            title: '启用当前服务',
+            description: '导入完成后，在 CC-Switch 列表中点击“启用”。',
+            alt: 'CC-Switch 供应商列表中启用 Codex API'
+          }
+        }
+      },
+      manualConfig: {
+        summary: '不想下载 CC-Switch，自己修改配置文件',
+        macosTitle: 'macOS 路径',
+        macosGuide: '在 ~/.codex 目录下创建或修改 config.toml 与 auth.json。',
+        windowsTitle: 'Windows 路径',
+        windowsGuide: '在 %userprofile%\\.codex 目录下创建或修改 config.toml 与 auth.json。',
+        configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分。',
+        stepCreateDir: '如果目录不存在，请先创建 .codex 配置目录。',
+        stepWriteFiles: '将下方内容分别写入对应文件；已有文件时请合并配置，避免覆盖其他服务。',
+        stepStart: '保存后打开终端运行 codex chat，发送一条简单消息验证连接。'
       },
       stepTitles: {
         download: '下载客户端',
@@ -748,7 +781,7 @@ export default {
         start: '打开客户端并发送测试请求',
         verify: '用一条测试消息确认连接',
         codex: {
-          download: '安装 Codex 命令行客户端',
+          download: '打开官方下载页下载 Codex',
           configure: '写入 Codex 配置和密钥'
         },
         cursor: {
@@ -767,18 +800,19 @@ export default {
       clients: {
         codex: {
           description: '适合直接在终端中使用官方 Codex 工作流。',
-          installHint: '命令行客户端',
+          installHint: '官方下载页',
+          downloadImageAlt: 'Codex 官方下载页中下载按钮的位置示意',
           steps: {
-            download: '打开官方下载页或使用包管理器安装 Codex。安装完成后回到此面板继续配置。',
-            configure: '将下面的内容写入 Codex 配置目录。配置里已经填好当前服务地址和 API Key。',
-            start: '打开终端运行 Codex，并发送一条简单请求确认服务可用。'
+            download: '点击下方按钮打开 Codex 官方下载页，在页面中选择适合你系统的版本下载安装。安装完成后回到此面板继续配置。',
+            configure: '推荐先安装 CC-Switch，再用它自动配置当前服务。你也可以展开下方内容自行修改 Codex 配置文件。',
+            start: '重启 Codex，并发送一条简单请求确认服务可用。'
           }
         },
         cursor: {
           description: '适合在 Cursor 编辑器中使用自定义 OpenAI 兼容服务。',
           installHint: '桌面编辑器',
           steps: {
-            download: '下载安装 Cursor。浏览器无法确认你是否已安装，安装后可以点击“我已安装”记录状态。',
+            download: '下载安装 Cursor，安装完成后继续配置模型服务。',
             configure: '在 Cursor 设置中添加 OpenAI 兼容服务，并填入下面的 Base URL 与 API Key。',
             verify: '新建一个聊天或代码编辑请求，确认请求能从当前服务返回。'
           }

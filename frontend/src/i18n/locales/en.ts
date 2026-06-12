@@ -721,8 +721,6 @@ export default {
     guide: {
       title: 'Service Setup Guide',
       description: 'Choose the AI client you want to use, then follow the steps to download the client and configure this service.',
-      detectionNote:
-        'A web page cannot reliably tell which local AI clients are installed on your computer. Browsers cannot enumerate local apps for security reasons, so this panel can only remember install states that you confirm manually.',
       chooseClientTitle: 'Choose the AI client you want to use',
       chooseClientHint: 'Codex, Cursor, OpenCode, Qoder',
       download: 'Download',
@@ -732,12 +730,47 @@ export default {
       stepsTitle: '{client} setup steps',
       currentStep: 'Step {index} / {total}',
       configTitle: 'Configuration',
-      haveInstalled: 'I have installed it',
-      installStatusHint:
-        'The install status is a manual confirmation saved in this browser. Reliable local detection would require a desktop app or browser extension.',
-      status: {
-        unknown: 'Cannot auto-detect',
-        confirmed: 'Confirmed installed'
+      ccSwitchDownload: {
+        title: 'Download CC-Switch (Recommended)',
+        description: 'After installation, import this service in one click and let CC-Switch write the required Codex configuration.',
+        detected: 'Detected system: {os}',
+        unknownOs: 'Unknown',
+        button: 'Download for {os}',
+      },
+      ccSwitchImport: {
+        title: 'Import This Service',
+        description: 'This opens CC-Switch and imports the current service as Codex API. The default model is {model}.',
+        button: 'Import to CC-Switch',
+        defaultProviderName: 'Codex API',
+        openFailed: 'Could not open CC-Switch. Please install CC-Switch first or check browser protocol permissions.',
+        guide: {
+          open: {
+            title: 'Allow CC-Switch',
+            description: 'When the browser prompt appears, click “Open CC Switch”.',
+            alt: 'Browser prompt asking to open CC Switch',
+          },
+          import: {
+            title: 'Confirm Import',
+            description: 'Check the service name, API endpoint, key, and model, then click “Import”.',
+            alt: 'CC-Switch provider import confirmation dialog',
+          },
+          enable: {
+            title: 'Enable the Service',
+            description: 'After import, click “Enable” for this provider in CC-Switch.',
+            alt: 'Enable Codex API in the CC-Switch provider list',
+          },
+        },
+      },
+      manualConfig: {
+        summary: 'Do not want CC-Switch? Edit the config files manually',
+        macosTitle: 'macOS path',
+        macosGuide: 'Create or update config.toml and auth.json under ~/.codex.',
+        windowsTitle: 'Windows path',
+        windowsGuide: 'Create or update config.toml and auth.json under %userprofile%\\.codex.',
+        configTomlHint: 'Make sure the following content is at the beginning of config.toml.',
+        stepCreateDir: 'Create the .codex config directory first if it does not exist.',
+        stepWriteFiles: 'Write the contents below into the matching files. If files already exist, merge the config instead of overwriting other services.',
+        stepStart: 'Save the files, open a terminal, run codex chat, and send a small message to verify the connection.',
       },
       stepTitles: {
         download: 'Download client',
@@ -749,7 +782,7 @@ export default {
         start: 'Open the client and send a test request',
         verify: 'Confirm the connection with one test message',
         codex: {
-          download: 'Install the Codex CLI',
+          download: 'Open the official Codex download page',
           configure: 'Write Codex config and key'
         },
         cursor: {
@@ -768,18 +801,19 @@ export default {
       clients: {
         codex: {
           description: 'Best for using the official Codex workflow directly from your terminal.',
-          installHint: 'CLI client',
+          installHint: 'Official download',
+          downloadImageAlt: 'Where to find the download button on the official Codex download page',
           steps: {
-            download: 'Open the official download page or install Codex with your package manager. Return here after installation.',
-            configure: 'Write the following content into the Codex config directory. The service URL and API key are already filled in.',
-            start: 'Open a terminal, run Codex, and send a small request to confirm the service works.'
+            download: 'Click the button below to open the official Codex download page, then choose the version for your system. Return here after installation to continue setup.',
+            configure: 'Install CC-Switch first to configure this service automatically. You can also expand the manual section below and edit the Codex config files yourself.',
+            start: 'Restart Codex and send a small request to confirm the service works.'
           }
         },
         cursor: {
           description: 'Best for using a custom OpenAI-compatible service inside Cursor.',
           installHint: 'Desktop editor',
           steps: {
-            download: 'Download and install Cursor. The browser cannot confirm installation, so use the confirmation button after installing.',
+            download: 'Download and install Cursor, then continue configuring the model service.',
             configure: 'Add an OpenAI-compatible service in Cursor settings, then enter the Base URL and API key below.',
             verify: 'Start a new chat or coding request and confirm that the response comes back through this service.'
           }
