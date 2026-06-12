@@ -743,10 +743,10 @@ export default {
         openCcSwitchDownload: 'Download CC-Switch',
         downloadedCcSwitchNext: 'I downloaded CC-Switch, continue',
         manualInstead: 'Skip CC-Switch, configure manually',
-        configureAiEnvironment: 'Configure AI environment',
+        configureAiEnvironment: 'Click to import into CC-Switch\nConfigure AI environment',
         configuredNext: 'Configuration done, continue',
         genericNext: 'Continue',
-        restartCodex: 'Restart Codex',
+        restartCodex: 'Need help? Join QQ group: 167625238',
         finish: 'Done'
       },
       codexSteps: {

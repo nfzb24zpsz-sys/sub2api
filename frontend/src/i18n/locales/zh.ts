@@ -742,10 +742,10 @@ export default {
         openCcSwitchDownload: '下载 CC-Switch',
         downloadedCcSwitchNext: '我已下载 CC-Switch，进入下一步',
         manualInstead: '不想下载 CC-Switch，自己配置',
-        configureAiEnvironment: '配置AI环境',
+        configureAiEnvironment: '点击按钮一键导入CC-Switch\n配置AI环境',
         configuredNext: '配置完毕，进入下一步',
         genericNext: '进入下一步',
-        restartCodex: '重启 Codex',
+        restartCodex: '有问题？加入QQ群：167625238，手把手教你',
         finish: '完成'
       },
       codexSteps: {

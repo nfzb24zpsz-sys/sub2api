@@ -373,7 +373,7 @@
                   @click="footerActions.previous.onClick?.()"
                 >
                   <Icon v-if="footerActions.previous.icon" :name="footerActions.previous.icon" size="sm" />
-                  {{ footerActions.previous.label }}
+                  <span class="whitespace-pre-line text-center leading-5">{{ footerActions.previous.label }}</span>
                 </component>
 
                 <component
@@ -384,7 +384,7 @@
                   @click="footerActions.action.onClick?.()"
                 >
                   <Icon v-if="footerActions.action.icon" :name="footerActions.action.icon" size="sm" />
-                  {{ footerActions.action.label }}
+                  <span class="whitespace-pre-line text-center leading-5">{{ footerActions.action.label }}</span>
                 </component>
                 <div v-else class="hidden lg:block" />
 
@@ -394,7 +394,7 @@
                   :class="actionButtonClass(footerActions.next)"
                   @click="footerActions.next.onClick?.()"
                 >
-                  {{ footerActions.next.label }}
+                  <span class="whitespace-pre-line text-center leading-5">{{ footerActions.next.label }}</span>
                   <Icon v-if="footerActions.next.icon" :name="footerActions.next.icon" size="sm" />
                 </component>
 
@@ -406,7 +406,7 @@
                   class="lg:col-start-3"
                   @click="footerActions.secondaryNext.onClick?.()"
                 >
-                  {{ footerActions.secondaryNext.label }}
+                  <span class="whitespace-pre-line text-center leading-5">{{ footerActions.secondaryNext.label }}</span>
                   <Icon v-if="footerActions.secondaryNext.icon" :name="footerActions.secondaryNext.icon" size="sm" />
                 </component>
               </div>
@@ -743,7 +743,7 @@ function actionButtonClass(action: FooterAction) {
     return `${base} btn-primary`
   }
   if (action.variant === 'action') {
-    return `${base} bg-gradient-to-r from-primary-600 to-sky-500 text-white shadow-lg shadow-primary-500/30 hover:from-primary-700 hover:to-sky-600 hover:shadow-xl hover:shadow-primary-500/35 dark:shadow-primary-500/20`
+    return `${base} min-h-[3.25rem] bg-gradient-to-r from-primary-600 to-sky-500 text-white shadow-lg shadow-primary-500/30 ring-1 ring-white/20 hover:from-primary-700 hover:to-sky-600 hover:shadow-xl hover:shadow-primary-500/35 dark:shadow-primary-500/20`
   }
   return `${base} btn-secondary`
 }
