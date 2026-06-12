@@ -723,6 +723,7 @@ export default {
       description: 'Choose the AI client you want to use, then follow the steps to download the client and configure this service.',
       chooseClientTitle: 'Choose the AI client you want to use',
       chooseClientHint: 'Codex, Cursor, OpenCode, Qoder',
+      progressTitle: 'Progress',
       download: 'Download',
       configure: 'Configure',
       previousStep: 'Previous',
@@ -730,6 +731,40 @@ export default {
       stepsTitle: '{client} setup steps',
       currentStep: 'Step {index} / {total}',
       configTitle: 'Configuration',
+      stepChecklistTitle: 'Follow these steps',
+      modeBadges: {
+        ccSwitch: 'Using CC-Switch',
+        manual: 'Manual setup'
+      },
+      actions: {
+        openCodexDownload: 'Open Codex download page',
+        downloadedCodexNext: 'I downloaded Codex, continue',
+        openCcSwitchDownload: 'Download CC-Switch',
+        downloadedCcSwitchNext: 'I downloaded CC-Switch, continue',
+        manualInstead: 'Skip CC-Switch, configure manually',
+        importCcSwitch: 'Import into CC-Switch',
+        configuredNext: 'Configuration done, continue',
+        genericNext: 'Continue',
+        finish: 'Done'
+      },
+      codexSteps: {
+        downloadCodex: {
+          title: 'Download Codex',
+          summary: 'Install Codex first, then continue'
+        },
+        downloadCcSwitch: {
+          title: 'Download CC-Switch',
+          summary: 'CC-Switch is required before one-click import'
+        },
+        importService: {
+          title: 'Import this service',
+          summary: 'Use CC-Switch to write the config automatically'
+        },
+        manualConfigure: {
+          title: 'Manual configuration',
+          summary: 'Write the config files yourself instead of using CC-Switch'
+        }
+      },
       ccSwitchDownload: {
         title: 'Download CC-Switch (Recommended)',
         description: 'After installation, import this service in one click and let CC-Switch write the required Codex configuration.',
@@ -803,10 +838,31 @@ export default {
           description: 'Best for using the official Codex workflow directly from your terminal.',
           installHint: 'Official download',
           downloadImageAlt: 'Where to find the download button on the official Codex download page',
+          restartNoticeTitle: 'You must restart Codex first',
+          restartNoticeDescription: 'Whether you imported through CC-Switch or edited the config files manually, the new settings will not be applied to the already opened Codex session immediately. You must fully quit Codex and open it again before the new Base URL and API key take effect.',
+          startChecklist: {
+            quitApp: 'Fully quit the current Codex app. Do not only close the chat window.',
+            reopenApp: 'Open Codex again and start a fresh session so it reads the latest configuration.',
+            sendHi: 'After restarting, send a simple message such as hi to confirm the service responds normally.'
+          },
+          startGallery: {
+            restart: {
+              title: 'Quit and restart Codex',
+              description: 'You can quit Codex from the app menu and then open it again. The new configuration only takes effect after restart.',
+              alt: 'Illustration showing how to quit and restart Codex'
+            },
+            verify: {
+              title: 'Send hi after restart',
+              description: 'After reopening Codex, send a simple message. If it replies normally, the service is connected.',
+              alt: 'Send hi in Codex after restart to verify the service'
+            }
+          },
           steps: {
             download: 'Click the button below to open the official Codex download page, then choose the version for your system. Return here after installation to continue setup.',
-            configure: 'Install CC-Switch first to configure this service automatically. You can also expand the manual section below and edit the Codex config files yourself.',
-            start: 'Restart Codex and send a small request to confirm the service works.'
+            prepareCcSwitch: 'If you want one-click import, install CC-Switch first. After that, continue to the import step. If not, you can switch to manual configuration instead.',
+            importService: 'Use the button below to open CC-Switch and import this service, then enable it inside CC-Switch.',
+            manualConfigure: 'If you do not want CC-Switch, write the Codex configuration files manually with the content below.',
+            start: 'You must restart Codex first. After restarting, send a small request to confirm the service works.'
           }
         },
         cursor: {

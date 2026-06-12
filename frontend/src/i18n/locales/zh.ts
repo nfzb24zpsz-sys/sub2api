@@ -722,6 +722,7 @@ export default {
       description: '选择你要使用的 AI 客户端，然后按步骤下载客户端并配置当前服务。',
       chooseClientTitle: '选择你要使用的 AI 客户端',
       chooseClientHint: 'Codex、Cursor、OpenCode、Qoder',
+      progressTitle: '配置进度',
       download: '下载',
       configure: '配置',
       previousStep: '上一步',
@@ -729,6 +730,40 @@ export default {
       stepsTitle: '{client} 配置步骤',
       currentStep: '第 {index} / {total} 步',
       configTitle: '配置内容',
+      stepChecklistTitle: '按这个顺序操作',
+      modeBadges: {
+        ccSwitch: '通过 CC-Switch',
+        manual: '手动配置'
+      },
+      actions: {
+        openCodexDownload: '打开 Codex 下载页',
+        downloadedCodexNext: '我已下载 Codex，进入下一步',
+        openCcSwitchDownload: '下载 CC-Switch',
+        downloadedCcSwitchNext: '我已下载 CC-Switch，进入下一步',
+        manualInstead: '不想下载 CC-Switch，自己配置',
+        importCcSwitch: '下载完成后，导入到 CC-Switch',
+        configuredNext: '配置完毕，进入下一步',
+        genericNext: '进入下一步',
+        finish: '完成'
+      },
+      codexSteps: {
+        downloadCodex: {
+          title: '下载 Codex 客户端',
+          summary: '先安装 Codex，再继续配置服务'
+        },
+        downloadCcSwitch: {
+          title: '下载 CC-Switch',
+          summary: '后续一键导入前，需要先安装 CC-Switch'
+        },
+        importService: {
+          title: '导入当前服务',
+          summary: '通过 CC-Switch 自动写入配置'
+        },
+        manualConfigure: {
+          title: '手动修改配置',
+          summary: '不使用 CC-Switch，直接写入配置文件'
+        }
+      },
       ccSwitchDownload: {
         title: '下载 CC-Switch（推荐）',
         description: '安装后可一键导入当前服务，自动写入 Codex 所需配置。',
@@ -802,10 +837,31 @@ export default {
           description: '适合直接在终端中使用官方 Codex 工作流。',
           installHint: '官方下载页',
           downloadImageAlt: 'Codex 官方下载页中下载按钮的位置示意',
+          restartNoticeTitle: '这一步一定要先重启 Codex',
+          restartNoticeDescription: '无论你是通过 CC-Switch 导入，还是手动修改配置文件，配置都不会立刻注入到当前已打开的 Codex 会话里。必须先完全退出 Codex，再重新打开，新的 Base URL 和 API Key 才会生效。',
+          startChecklist: {
+            quitApp: '先完全退出当前正在运行的 Codex，不要只关闭对话窗口。',
+            reopenApp: '重新打开 Codex，进入一个新会话，确保它读取到最新配置。',
+            sendHi: '重启后发送一条简单请求，比如 hi，确认能够正常返回内容。'
+          },
+          startGallery: {
+            restart: {
+              title: '先退出，再重启 Codex',
+              description: '可以从菜单里直接退出 Codex，再重新打开应用。只有重启后，新配置才会真正生效。',
+              alt: '退出并重启 Codex 的示意图'
+            },
+            verify: {
+              title: '重启后发一条 hi 测试',
+              description: '重启完成后发一条简单消息，只要能正常返回内容，就说明当前服务已经接通。',
+              alt: '重启 Codex 后发送 hi 验证服务可用'
+            }
+          },
           steps: {
             download: '点击下方按钮打开 Codex 官方下载页，在页面中选择适合你系统的版本下载安装。安装完成后回到此面板继续配置。',
-            configure: '推荐先安装 CC-Switch，再用它自动配置当前服务。你也可以展开下方内容自行修改 Codex 配置文件。',
-            start: '重启 Codex，并发送一条简单请求确认服务可用。'
+            prepareCcSwitch: '如果你想一键导入当前服务，先安装 CC-Switch。安装完成后可以直接进入下一步导入；如果你不想安装，也可以走手动配置。',
+            importService: '点击页面下方按钮打开 CC-Switch，将当前服务导入进去，然后在 CC-Switch 中启用即可。',
+            manualConfigure: '不使用 CC-Switch 时，按下面的文件路径和内容手动写入 Codex 配置。',
+            start: '这一步一定要先重启 Codex。重启完成后，再发送一条简单请求确认服务可用。'
           }
         },
         cursor: {
