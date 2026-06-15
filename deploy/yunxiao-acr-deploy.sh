@@ -7,8 +7,11 @@ COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.yml"
 ENV_FILE="${DEPLOY_DIR}/.env"
 ENV_EXAMPLE_FILE="${DEPLOY_DIR}/.env.example"
 
-COMPOSE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/docker-compose.local.yml"
-ENV_EXAMPLE_URL="https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/.env.example"
+REPO_OWNER="${REPO_OWNER:-nfzb24zpsz-sys}"
+REPO_NAME="${REPO_NAME:-sub2api}"
+REPO_BRANCH="${CI_COMMIT_REF_NAME:-main}"
+COMPOSE_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/deploy/docker-compose.yml"
+ENV_EXAMPLE_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/deploy/.env.example"
 
 IMAGE="${IMAGE:-}"
 DOCKERHUB_IMAGE_PREFIX="${DOCKERHUB_IMAGE_PREFIX:-m.daocloud.io/docker.io/library}"
@@ -378,10 +381,8 @@ ensure_deploy_files() {
   # PostgreSQL unable to read files such as global/pg_filenode.map.
   run_as_root chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR/data" || true
 
-  if [ ! -f "$COMPOSE_FILE" ]; then
-    echo "[INFO] Download docker-compose.yml..."
-    download_file "$COMPOSE_URL" "$COMPOSE_FILE"
-  fi
+  echo "[INFO] Download docker-compose.yml from ${COMPOSE_URL}..."
+  download_file "$COMPOSE_URL" "$COMPOSE_FILE"
 
   if [ ! -f "$ENV_EXAMPLE_FILE" ]; then
     echo "[INFO] Download .env.example..."
