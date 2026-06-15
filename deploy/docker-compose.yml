@@ -51,12 +51,14 @@ services:
 
       # =======================================================================
       # Database Configuration (PostgreSQL)
+      # Set DATABASE_HOST to an external RDS host to skip the built-in postgres
+      # container. Leave as "postgres" (default) to use the built-in container.
       # =======================================================================
-      - DATABASE_HOST=postgres
+      - DATABASE_HOST=pgm-6we15o2f4blf789d9o.pgsql.japan.rds.aliyuncs.com
       - DATABASE_PORT=5432
-      - DATABASE_USER=${POSTGRES_USER:-sub2api}
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      - DATABASE_DBNAME=${POSTGRES_DB:-sub2api}
+      - DATABASE_USER=erqishi
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      - DATABASE_DBNAME=sub2api
       - DATABASE_SSLMODE=disable
       - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS:-50}
       - DATABASE_MAX_IDLE_CONNS=${DATABASE_MAX_IDLE_CONNS:-10}
