@@ -740,10 +740,13 @@ export default {
         previousStep: 'Back',
         openCodexDownload: 'Open Codex download page',
         downloadedCodexNext: 'I downloaded Codex, continue',
+        openOpenCodeDownload: 'Open OpenCode download page',
+        downloadedOpenCodeNext: 'I installed OpenCode, continue',
         openCcSwitchDownload: 'Download CC-Switch',
         downloadedCcSwitchNext: 'I downloaded CC-Switch, continue',
         manualInstead: 'Skip CC-Switch, configure manually',
         configureAiEnvironment: 'Click to import into CC-Switch\nConfigure AI environment',
+        configureOpenCodeEnvironment: 'Click to import into CC-Switch\nConfigure OpenCode environment',
         configuredNext: 'Configuration done, continue',
         genericNext: 'Continue',
         restartCodex: 'Need help? Join QQ group: 167625238',
@@ -769,7 +772,7 @@ export default {
       },
       ccSwitchDownload: {
         title: 'Download CC-Switch (Recommended)',
-        description: 'After installation, import this service in one click and let CC-Switch write the required Codex configuration.',
+        description: 'After installation, import this service in one click and let CC-Switch write the required configuration for the current client.',
         footerHint: 'The download action is now in the middle button below. After downloading, use the right button to continue.',
         detected: 'Detected system: {os}',
         unknownOs: 'Unknown',
@@ -799,6 +802,26 @@ export default {
           },
         },
       },
+      opencodeSteps: {
+        downloadCcSwitch: {
+          summary: 'Prefer CC-Switch to write the OpenCode config automatically'
+        },
+        importService: {
+          title: 'Import this service',
+          summary: 'Use CC-Switch to write the OpenCode config automatically'
+        },
+        manualConfigure: {
+          title: 'Manual configuration',
+          summary: 'Write the OpenCode config files yourself instead of using CC-Switch'
+        }
+      },
+      opencodeImport: {
+        defaultProviderName: 'OpenCode API',
+        openFailed: 'Could not open CC-Switch. Please install CC-Switch first or check browser protocol permissions.'
+      },
+      opencodeManualConfig: {
+        configHint: 'Prefer the global config ~/.config/opencode/opencode.json; a project-level opencode.json overrides it.'
+      },
       manualConfig: {
         summary: 'Do not want CC-Switch? Edit the config files manually',
         macosTitle: 'macOS path',
@@ -813,6 +836,7 @@ export default {
       stepTitles: {
         download: 'Download client',
         configure: 'Configure service',
+        prepare: 'Prepare tools',
         start: 'Start using',
         verify: 'Verify connection'
       },

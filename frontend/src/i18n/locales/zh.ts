@@ -739,10 +739,13 @@ export default {
         previousStep: '返回上一步',
         openCodexDownload: '打开 Codex 下载页',
         downloadedCodexNext: '我已下载 Codex，进入下一步',
+        openOpenCodeDownload: '打开 OpenCode 下载页',
+        downloadedOpenCodeNext: '我已安装 OpenCode，进入下一步',
         openCcSwitchDownload: '下载 CC-Switch',
         downloadedCcSwitchNext: '我已下载 CC-Switch，进入下一步',
         manualInstead: '不想下载 CC-Switch，自己配置',
         configureAiEnvironment: '点击按钮一键导入CC-Switch\n配置AI环境',
+        configureOpenCodeEnvironment: '点击按钮一键导入CC-Switch\n配置OpenCode环境',
         configuredNext: '配置完毕，进入下一步',
         genericNext: '进入下一步',
         restartCodex: '有问题？加入QQ群：167625238，手把手教你',
@@ -768,7 +771,7 @@ export default {
       },
       ccSwitchDownload: {
         title: '下载 CC-Switch（推荐）',
-        description: '安装后可一键导入当前服务，自动写入 Codex 所需配置。',
+        description: '安装后可一键导入当前服务，自动写入当前客户端所需配置。',
         footerHint: '下载动作已经放在底部中间按钮。下载完成后，点击右侧按钮继续。',
         detected: '已识别当前系统：{os}',
         unknownOs: '未识别',
@@ -798,6 +801,26 @@ export default {
           }
         }
       },
+      opencodeSteps: {
+        downloadCcSwitch: {
+          summary: '优先使用 CC-Switch 自动写入 OpenCode 配置'
+        },
+        importService: {
+          title: '导入当前服务',
+          summary: '通过 CC-Switch 自动写入 OpenCode 配置'
+        },
+        manualConfigure: {
+          title: '手动修改配置',
+          summary: '不使用 CC-Switch，直接写入 OpenCode 配置文件'
+        }
+      },
+      opencodeImport: {
+        defaultProviderName: 'OpenCode API',
+        openFailed: '无法打开 CC-Switch，请先安装 CC-Switch 或检查浏览器协议权限。'
+      },
+      opencodeManualConfig: {
+        configHint: '优先写入全局配置 ~/.config/opencode/opencode.json；项目内 opencode.json 会覆盖全局配置。'
+      },
       manualConfig: {
         summary: '不想下载 CC-Switch，自己修改配置文件',
         macosTitle: 'macOS 路径',
@@ -812,6 +835,7 @@ export default {
       stepTitles: {
         download: '下载客户端',
         configure: '配置服务',
+        prepare: '准备工具',
         start: '开始使用',
         verify: '验证连接'
       },

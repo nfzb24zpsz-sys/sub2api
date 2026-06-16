@@ -511,6 +511,7 @@ interface FooterActions {
 
 type Phase = 'select' | 'setup'
 type CodexSetupPath = 'cc-switch' | 'manual'
+type OpenCodeSetupPath = 'cc-switch' | 'manual'
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
@@ -519,6 +520,7 @@ const phase = ref<Phase>('select')
 const selectedClientId = ref('codex')
 const currentStep = ref(0)
 const codexSetupPath = ref<CodexSetupPath>('cc-switch')
+const openCodeSetupPath = ref<OpenCodeSetupPath>('cc-switch')
 const ccSwitchImportModel = OPENAI_CC_SWITCH_CODEX_MODEL
 
 watch(
@@ -648,16 +650,14 @@ const currentStepStep = computed(() => {
 })
 
 const currentStepBadge = computed(() => {
-  if (selectedClientId.value !== 'codex') {
-    return ''
-  }
+  if (selectedClientId.value === 'codex' || selectedClientId.value === 'opencode') {
+    if (currentStepStep.value?.id === 'configureService') {
+      return t('services.guide.modeBadges.ccSwitch')
+    }
 
-  if (currentStepStep.value?.id === 'configureService') {
-    return t('services.guide.modeBadges.ccSwitch')
-  }
-
-  if (currentStepStep.value?.id === 'manualConfigure') {
-    return t('services.guide.modeBadges.manual')
+    if (currentStepStep.value?.id === 'manualConfigure') {
+      return t('services.guide.modeBadges.manual')
+    }
   }
 
   return ''
@@ -672,6 +672,10 @@ const footerActions = computed(() => {
     return buildCodexFooterActions(currentStepStep.value.id)
   }
 
+  if (selectedClientId.value === 'opencode') {
+    return buildOpenCodeFooterActions(currentStepStep.value.id)
+  }
+
   return buildGenericFooterActions()
 })
 
@@ -680,12 +684,14 @@ function resetGuide() {
   selectedClientId.value = 'codex'
   currentStep.value = 0
   codexSetupPath.value = 'cc-switch'
+  openCodeSetupPath.value = 'cc-switch'
 }
 
 function beginSetup(clientId: string) {
   selectedClientId.value = clientId
   currentStep.value = 0
   codexSetupPath.value = 'cc-switch'
+  openCodeSetupPath.value = 'cc-switch'
   phase.value = 'setup'
 }
 
@@ -700,6 +706,11 @@ function goToNextStep() {
 
 function continueWithCodexPath(path: CodexSetupPath) {
   codexSetupPath.value = path
+  goToNextStep()
+}
+
+function continueWithOpenCodePath(path: OpenCodeSetupPath) {
+  openCodeSetupPath.value = path
   goToNextStep()
 }
 
@@ -770,6 +781,40 @@ function importCurrentServiceToCcSwitch() {
     window.open(deeplink, '_self')
   } catch {
     window.alert(t('services.guide.ccSwitchImport.openFailed'))
+  }
+}
+
+function importCurrentServiceToOpenCode() {
+  const usageScript = `({
+    request: {
+      url: "{{baseUrl}}/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
+      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      return {
+        isValid: response?.is_active ?? response?.isValid ?? true,
+        remaining,
+        unit
+      };
+    }
+  })`
+
+  const deeplink = buildCcSwitchImportDeeplink({
+    baseUrl: baseRoot.value,
+    platform: 'openai',
+    clientType: 'opencode',
+    providerName: props.group?.name || t('services.guide.opencodeImport.defaultProviderName'),
+    apiKey: props.apiKey,
+    usageScript,
+  })
+
+  try {
+    window.open(deeplink, '_self')
+  } catch {
+    window.alert(t('services.guide.opencodeImport.openFailed'))
   }
 }
 
@@ -925,6 +970,108 @@ function buildCodexFooterActions(stepId: string): FooterActions {
   }
 }
 
+function buildOpenCodeFooterActions(stepId: string): FooterActions {
+  const previous: FooterAction = {
+    id: 'previous-step',
+    label: t('services.guide.actions.previousStep'),
+    variant: 'secondary',
+    icon: 'arrowLeft',
+    onClick: goToPreviousStep,
+  }
+
+  if (stepId === 'download') {
+    return {
+      previous,
+      action: {
+        id: 'open-opencode-download',
+        label: t('services.guide.actions.openOpenCodeDownload'),
+        variant: 'action',
+        icon: 'download',
+        href: 'https://opencode.ai',
+      },
+      next: {
+        id: 'opencode-next',
+        label: t('services.guide.actions.downloadedOpenCodeNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
+  }
+
+  if (stepId === 'downloadCcSwitch') {
+    return {
+      previous,
+      action: {
+        id: 'download-cc-switch',
+        label: t('services.guide.actions.openCcSwitchDownload'),
+        variant: 'action',
+        icon: 'download',
+        href: detectedCcSwitchDownload.value.href,
+      },
+      next: {
+        id: 'cc-switch-next',
+        label: t('services.guide.actions.downloadedCcSwitchNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: () => continueWithOpenCodePath('cc-switch'),
+      },
+      secondaryNext: {
+        id: 'manual-config-next',
+        label: t('services.guide.actions.manualInstead'),
+        variant: 'secondary',
+        icon: 'arrowRight',
+        onClick: () => continueWithOpenCodePath('manual'),
+      },
+    }
+  }
+
+  if (stepId === 'configureService') {
+    return {
+      previous,
+      action: {
+        id: 'configure-open-code',
+        label: t('services.guide.actions.configureOpenCodeEnvironment'),
+        variant: 'action',
+        icon: 'link',
+        onClick: importCurrentServiceToOpenCode,
+      },
+      next: {
+        id: 'configure-open-code-next',
+        label: t('services.guide.actions.configuredNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
+  }
+
+  if (stepId === 'manualConfigure') {
+    return {
+      previous,
+      action: undefined,
+      next: {
+        id: 'manual-opencode-configure-next',
+        label: t('services.guide.actions.configuredNext'),
+        variant: 'primary',
+        icon: 'arrowRight',
+        onClick: goToNextStep,
+      },
+    }
+  }
+
+  return {
+    previous,
+    next: {
+      id: 'finish-opencode',
+      label: t('services.guide.actions.finish'),
+      variant: 'primary',
+      icon: 'checkCircle',
+      onClick: finishGuide,
+    },
+  }
+}
+
 function buildGenericFooterActions(): FooterActions {
   const step = currentStepStep.value
   const steps = selectedClient.value?.steps || []
@@ -1059,6 +1206,23 @@ goals = true`,
 }
 
 function buildOpenCodeSteps(): ClientStep[] {
+  const manualConfigFiles = buildOpenCodeManualConfigFiles()
+  const configureStep: ClientStep = openCodeSetupPath.value === 'manual'
+    ? {
+        id: 'manualConfigure',
+        title: t('services.guide.opencodeSteps.manualConfigure.title'),
+        summary: t('services.guide.opencodeSteps.manualConfigure.summary'),
+        description: t('services.guide.clients.opencode.steps.manualConfigure'),
+        manualConfigFiles,
+      }
+    : {
+        id: 'configureService',
+        title: t('services.guide.opencodeSteps.importService.title'),
+        summary: t('services.guide.opencodeSteps.importService.summary'),
+        description: t('services.guide.clients.opencode.steps.importService'),
+        ccSwitchImport: true,
+      }
+
   return [
     {
       id: 'download',
@@ -1069,13 +1233,33 @@ function buildOpenCodeSteps(): ClientStep[] {
       links: [{ label: t('services.guide.openDownloadPage'), href: 'https://opencode.ai' }],
     },
     {
-      id: 'configure',
-      title: t('services.guide.stepTitles.configure'),
-      summary: t('services.guide.stepSummaries.opencode.configure'),
-      description: t('services.guide.clients.opencode.steps.configure'),
-      config: JSON.stringify({
+      id: 'downloadCcSwitch',
+      title: t('services.guide.stepTitles.prepare'),
+      summary: t('services.guide.opencodeSteps.downloadCcSwitch.summary'),
+      description: t('services.guide.clients.opencode.steps.prepareCcSwitch'),
+      ccSwitchDownload: true,
+    },
+    configureStep,
+    {
+      id: 'start',
+      title: t('services.guide.stepTitles.start'),
+      summary: t('services.guide.stepSummaries.start'),
+      description: t('services.guide.clients.opencode.steps.start'),
+      config: 'opencode',
+    },
+  ]
+}
+
+function buildOpenCodeManualConfigFiles() {
+  return [
+    {
+      path: '~/.config/opencode/opencode.json / opencode.jsonc',
+      hint: t('services.guide.opencodeManualConfig.configHint'),
+      content: JSON.stringify({
+        $schema: 'https://opencode.ai/config.json',
         provider: {
           openai: {
+            name: 'OpenAI',
             options: {
               baseURL: preferredBase.value,
               apiKey: props.apiKey,
@@ -1083,13 +1267,6 @@ function buildOpenCodeSteps(): ClientStep[] {
           },
         },
       }, null, 2),
-    },
-    {
-      id: 'start',
-      title: t('services.guide.stepTitles.start'),
-      summary: t('services.guide.stepSummaries.start'),
-      description: t('services.guide.clients.opencode.steps.start'),
-      config: 'opencode',
     },
   ]
 }
