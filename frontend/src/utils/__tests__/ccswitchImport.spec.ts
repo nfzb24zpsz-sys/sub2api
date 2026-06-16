@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   OPENAI_CC_SWITCH_CODEX_MODEL,
-  buildCcSwitchImportDeeplink
+  buildCcSwitchImportDeeplink,
+  normalizeCcSwitchProviderId
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
 
@@ -46,6 +47,18 @@ describe('ccswitchImport utils', () => {
     expect(params.get('app')).toBe('opencode')
     expect(params.get('endpoint')).toBe(baseInput.baseUrl)
     expect(params.has('model')).toBe(false)
+  })
+
+  it('normalizes OpenCode provider ids for CC-Switch validation', () => {
+    expect(normalizeCcSwitchProviderId('My OpenCode_Service')).toBe('my-opencode-service')
+    expect(normalizeCcSwitchProviderId('中文服务', 'opencode-12')).toBe('opencode-12')
+  })
+
+  it('translates common Chinese provider names before normalizing ids', () => {
+    expect(normalizeCcSwitchProviderId('按量付费')).toBe('pay-as-you-go')
+    expect(normalizeCcSwitchProviderId('套餐订阅')).toBe('subscription-plan')
+    expect(normalizeCcSwitchProviderId('x刀/天')).toBe('x-dollar-per-day')
+    expect(normalizeCcSwitchProviderId('3刀/天套餐')).toBe('3-dollar-per-day-plan')
   })
 
   it.each([

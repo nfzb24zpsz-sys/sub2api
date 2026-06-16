@@ -41,7 +41,10 @@
             @keydown.space.prevent="beginSetup(client.id)"
           >
             <div class="flex items-start justify-between gap-3">
-              <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-dark-600 dark:bg-dark-900">
+              <div
+                class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-dark-600 dark:shadow-none"
+                :class="client.id === 'codex' ? 'dark:bg-dark-900' : 'dark:bg-white'"
+              >
                 <img :src="client.icon" :alt="client.label" class="h-full w-full object-contain p-1.5" />
               </div>
               <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500 dark:bg-dark-700 dark:text-dark-300">
@@ -71,7 +74,10 @@
         <div class="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
           <aside class="space-y-4 rounded-[28px] border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-600 dark:bg-dark-800">
             <div class="flex items-center gap-3">
-              <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-900">
+              <div
+                class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-dark-600 dark:shadow-none"
+                :class="selectedClient.id === 'codex' ? 'dark:bg-dark-900' : 'dark:bg-white'"
+              >
                 <img :src="selectedClient.icon" :alt="selectedClient.label" class="h-full w-full object-contain p-1.5" />
               </div>
               <div class="min-w-0">
@@ -435,6 +441,7 @@ import restartCodexImage from '@/assets/service-guide/restart-codex.png'
 import codexHiCheckImage from '@/assets/service-guide/codex-hi-check.png'
 import {
   buildCcSwitchImportDeeplink,
+  normalizeCcSwitchProviderId,
   OPENAI_CC_SWITCH_CODEX_MODEL,
 } from '@/utils/ccswitchImport'
 import type { Group } from '@/types'
@@ -806,7 +813,7 @@ function importCurrentServiceToOpenCode() {
     baseUrl: baseRoot.value,
     platform: 'openai',
     clientType: 'opencode',
-    providerName: props.group?.name || t('services.guide.opencodeImport.defaultProviderName'),
+    providerName: normalizeCcSwitchProviderId(props.group?.name || '', `opencode-${props.group?.id || 'api'}`),
     apiKey: props.apiKey,
     usageScript,
   })

@@ -19,6 +19,42 @@ export interface CcSwitchImportDeeplinkInput {
   usageScript: string
 }
 
+const ccSwitchProviderTranslations: Array<[RegExp, string]> = [
+  [/按量付费/g, '-pay-as-you-go-'],
+  [/套餐订阅/g, '-subscription-plan-'],
+  [/x刀\/?天/gi, '-x-dollar-per-day-'],
+  [/(\d+(?:\.\d+)?)刀\/?天/g, '-$1-dollar-per-day-'],
+  [/(\d+(?:\.\d+)?)刀/g, '-$1-dollar-'],
+  [/按量/g, '-usage-based-'],
+  [/订阅/g, '-subscription-'],
+  [/套餐/g, '-plan-'],
+  [/免费/g, '-free-'],
+  [/专业/g, '-pro-'],
+  [/高级/g, '-pro-'],
+  [/基础/g, '-basic-'],
+  [/标准/g, '-standard-'],
+  [/极速/g, '-fast-'],
+  [/月/g, '-month-'],
+  [/日/g, '-day-'],
+]
+
+export function normalizeCcSwitchProviderId(value: string, fallback = 'sub2api'): string {
+  const translated = ccSwitchProviderTranslations.reduce(
+    (current, [pattern, replacement]) => current.replace(pattern, replacement),
+    value.trim()
+  )
+
+  const normalized = translated
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  return normalized || fallback
+}
+
 export function resolveCcSwitchImportConfig(
   platform: GroupPlatform | undefined | null,
   clientType: CcSwitchClientType,
