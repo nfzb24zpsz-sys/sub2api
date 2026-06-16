@@ -16,6 +16,121 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type apiKeyCatalogGroupRepoStub struct {
+	groupRepoNoop
+	groups []Group
+}
+
+func (s *apiKeyCatalogGroupRepoStub) ListActive(context.Context) ([]Group, error) {
+	return append([]Group(nil), s.groups...), nil
+}
+
+type apiKeyCatalogUserRepoStub struct {
+	user *User
+}
+
+func (s *apiKeyCatalogUserRepoStub) Create(context.Context, *User) error {
+	panic("unexpected Create call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetByID(context.Context, int64) (*User, error) {
+	if s.user == nil {
+		return &User{}, nil
+	}
+	cp := *s.user
+	cp.AllowedGroups = append([]int64(nil), s.user.AllowedGroups...)
+	return &cp, nil
+}
+func (s *apiKeyCatalogUserRepoStub) GetByIDIncludeDeleted(context.Context, int64) (*User, error) {
+	panic("unexpected GetByIDIncludeDeleted call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetByEmail(context.Context, string) (*User, error) {
+	panic("unexpected GetByEmail call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetFirstAdmin(context.Context) (*User, error) {
+	panic("unexpected GetFirstAdmin call")
+}
+func (s *apiKeyCatalogUserRepoStub) Update(context.Context, *User) error {
+	panic("unexpected Update call")
+}
+func (s *apiKeyCatalogUserRepoStub) Delete(context.Context, int64) error {
+	panic("unexpected Delete call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetUserAvatar(context.Context, int64) (*UserAvatar, error) {
+	panic("unexpected GetUserAvatar call")
+}
+func (s *apiKeyCatalogUserRepoStub) UpsertUserAvatar(context.Context, int64, UpsertUserAvatarInput) (*UserAvatar, error) {
+	panic("unexpected UpsertUserAvatar call")
+}
+func (s *apiKeyCatalogUserRepoStub) DeleteUserAvatar(context.Context, int64) error {
+	panic("unexpected DeleteUserAvatar call")
+}
+func (s *apiKeyCatalogUserRepoStub) List(context.Context, pagination.PaginationParams) ([]User, *pagination.PaginationResult, error) {
+	panic("unexpected List call")
+}
+func (s *apiKeyCatalogUserRepoStub) ListWithFilters(context.Context, pagination.PaginationParams, UserListFilters) ([]User, *pagination.PaginationResult, error) {
+	panic("unexpected ListWithFilters call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetLatestUsedAtByUserIDs(context.Context, []int64) (map[int64]*time.Time, error) {
+	panic("unexpected GetLatestUsedAtByUserIDs call")
+}
+func (s *apiKeyCatalogUserRepoStub) GetLatestUsedAtByUserID(context.Context, int64) (*time.Time, error) {
+	panic("unexpected GetLatestUsedAtByUserID call")
+}
+func (s *apiKeyCatalogUserRepoStub) UpdateUserLastActiveAt(context.Context, int64, time.Time) error {
+	panic("unexpected UpdateUserLastActiveAt call")
+}
+func (s *apiKeyCatalogUserRepoStub) UpdateBalance(context.Context, int64, float64) error {
+	panic("unexpected UpdateBalance call")
+}
+func (s *apiKeyCatalogUserRepoStub) DeductBalance(context.Context, int64, float64) error {
+	panic("unexpected DeductBalance call")
+}
+func (s *apiKeyCatalogUserRepoStub) UpdateConcurrency(context.Context, int64, int) error {
+	panic("unexpected UpdateConcurrency call")
+}
+func (s *apiKeyCatalogUserRepoStub) BatchSetConcurrency(context.Context, []int64, int) (int, error) {
+	panic("unexpected BatchSetConcurrency call")
+}
+func (s *apiKeyCatalogUserRepoStub) BatchAddConcurrency(context.Context, []int64, int) (int, error) {
+	panic("unexpected BatchAddConcurrency call")
+}
+func (s *apiKeyCatalogUserRepoStub) ExistsByEmail(context.Context, string) (bool, error) {
+	panic("unexpected ExistsByEmail call")
+}
+func (s *apiKeyCatalogUserRepoStub) RemoveGroupFromAllowedGroups(context.Context, int64) (int64, error) {
+	panic("unexpected RemoveGroupFromAllowedGroups call")
+}
+func (s *apiKeyCatalogUserRepoStub) AddGroupToAllowedGroups(context.Context, int64, int64) error {
+	panic("unexpected AddGroupToAllowedGroups call")
+}
+func (s *apiKeyCatalogUserRepoStub) RemoveGroupFromUserAllowedGroups(context.Context, int64, int64) error {
+	panic("unexpected RemoveGroupFromUserAllowedGroups call")
+}
+func (s *apiKeyCatalogUserRepoStub) ListUserAuthIdentities(context.Context, int64) ([]UserAuthIdentityRecord, error) {
+	panic("unexpected ListUserAuthIdentities call")
+}
+func (s *apiKeyCatalogUserRepoStub) UnbindUserAuthProvider(context.Context, int64, string) error {
+	panic("unexpected UnbindUserAuthProvider call")
+}
+func (s *apiKeyCatalogUserRepoStub) UpdateTotpSecret(context.Context, int64, *string) error {
+	panic("unexpected UpdateTotpSecret call")
+}
+func (s *apiKeyCatalogUserRepoStub) EnableTotp(context.Context, int64) error {
+	panic("unexpected EnableTotp call")
+}
+func (s *apiKeyCatalogUserRepoStub) DisableTotp(context.Context, int64) error {
+	panic("unexpected DisableTotp call")
+}
+
+type apiKeyCatalogUserSubRepoStub struct {
+	userSubRepoNoop
+	subs []UserSubscription
+}
+
+func (s apiKeyCatalogUserSubRepoStub) ListActiveByUserID(context.Context, int64) ([]UserSubscription, error) {
+	return append([]UserSubscription(nil), s.subs...), nil
+}
+
 type authRepoStub struct {
 	getByKeyForAuth   func(ctx context.Context, key string) (*APIKey, error)
 	listKeysByUserID  func(ctx context.Context, userID int64) ([]string, error)
@@ -172,6 +287,32 @@ func (s *authCacheStub) PublishAuthCacheInvalidation(ctx context.Context, cacheK
 
 func (s *authCacheStub) SubscribeAuthCacheInvalidation(ctx context.Context, handler func(cacheKey string)) error {
 	return nil
+}
+
+func TestAPIKeyService_GetGroupCatalog_HidesUnavailableExclusiveGroups(t *testing.T) {
+	groups := []Group{
+		{ID: 1, Name: "public", Status: StatusActive, SubscriptionType: SubscriptionTypeStandard, IsExclusive: false},
+		{ID: 2, Name: "exclusive-hidden", Status: StatusActive, SubscriptionType: SubscriptionTypeStandard, IsExclusive: true},
+		{ID: 3, Name: "exclusive-visible", Status: StatusActive, SubscriptionType: SubscriptionTypeStandard, IsExclusive: true},
+	}
+	svc := NewAPIKeyService(
+		nil,
+		&apiKeyCatalogUserRepoStub{user: &User{ID: 9, AllowedGroups: []int64{3}}},
+		&apiKeyCatalogGroupRepoStub{groups: groups},
+		apiKeyCatalogUserSubRepoStub{},
+		nil,
+		nil,
+		&config.Config{},
+	)
+
+	catalog, err := svc.GetGroupCatalog(context.Background(), 9)
+	require.NoError(t, err)
+
+	ids := make([]int64, 0, len(catalog))
+	for _, group := range catalog {
+		ids = append(ids, group.ID)
+	}
+	require.ElementsMatch(t, []int64{1, 3}, ids)
 }
 
 func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {

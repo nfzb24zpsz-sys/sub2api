@@ -139,7 +139,9 @@ const publicBaseUrl = computed(() => appStore.apiBaseUrl || window.location.orig
 const credential = useServiceCredential()
 
 const serviceRows = computed<ServiceRow[]>(() => {
+  const visibleGroupIds = availableGroupIds.value
   return groups.value
+    .filter((group) => !group.is_exclusive || visibleGroupIds.has(group.id))
     .slice()
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id - b.id)
     .map((group) => buildServiceRow(group))
