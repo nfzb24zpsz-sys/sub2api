@@ -27,19 +27,31 @@ func TestUserAvailableChannel_Unauthenticated401(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestFilterUserVisibleGroups_IntersectionOnly(t *testing.T) {
-	// 渠道挂在 {g1, g2, g3}，用户只允许 {g1, g3} —— 响应必须仅含 g1/g3。
+func TestFilterUserVisibleGroups_PublicAlwaysVisibleExclusiveRequiresAllowed(t *testing.T) {
+	// 公开分组默认可见；专属分组只有进入用户 allowed 集合时才可见。
 	groups := []service.AvailableGroupRef{
-		{ID: 1, Name: "g1", Platform: "anthropic"},
-		{ID: 2, Name: "g2", Platform: "anthropic"},
-		{ID: 3, Name: "g3", Platform: "openai"},
+		{ID: 1, Name: "public-anthropic", Platform: "anthropic", IsExclusive: false},
+		{ID: 2, Name: "exclusive-hidden", Platform: "anthropic", IsExclusive: true},
+		{ID: 3, Name: "exclusive-visible", Platform: "openai", IsExclusive: true},
 	}
-	allowed := map[int64]struct{}{1: {}, 3: {}}
+	allowed := map[int64]struct{}{3: {}}
 
 	visible := filterUserVisibleGroups(groups, allowed)
 	require.Len(t, visible, 2)
 	ids := []int64{visible[0].ID, visible[1].ID}
 	require.ElementsMatch(t, []int64{1, 3}, ids)
+}
+
+func TestFilterUserVisibleGroups_PublicVisibleWithEmptyAllowed(t *testing.T) {
+	groups := []service.AvailableGroupRef{
+		{ID: 1, Name: "public", Platform: "anthropic", IsExclusive: false},
+		{ID: 2, Name: "exclusive", Platform: "anthropic", IsExclusive: true},
+	}
+
+	visible := filterUserVisibleGroups(groups, map[int64]struct{}{})
+	require.Len(t, visible, 1)
+	require.Equal(t, int64(1), visible[0].ID)
+	require.False(t, visible[0].IsExclusive)
 }
 
 func TestToUserSupportedModels_FiltersByAllowedPlatforms(t *testing.T) {

@@ -13,8 +13,8 @@ import (
 // AvailableChannelHandler 处理用户侧「可用渠道」查询。
 //
 // 用户侧接口委托 ChannelService.ListAvailable，并在返回前做三层过滤：
-//  1. 行过滤：只保留状态为 Active 且与当前用户可访问分组有交集的渠道；
-//  2. 分组过滤：渠道的 Groups 只保留用户可访问的那些；
+//  1. 行过滤：只保留状态为 Active 且存在用户可见分组的渠道；
+//  2. 分组过滤：公开分组始终展示，专属分组仅保留用户可访问的那些；
 //  3. 平台过滤：渠道的 SupportedModels 只保留平台在用户可见 Groups 中出现过的模型，
 //     防止"渠道同时挂在 antigravity / anthropic 两个平台的分组上，用户只访问
 //     antigravity，却看到 anthropic 模型"这类跨平台信息泄漏；
@@ -202,15 +202,19 @@ func buildPlatformSections(
 	return sections
 }
 
-// filterUserVisibleGroups 仅保留用户可访问的分组。
+// filterUserVisibleGroups 仅保留用户可见的分组：
+//   - 公开分组（IsExclusive=false）默认可见，不受用户可绑定状态影响；
+//   - 专属分组（IsExclusive=true）只有用户可访问时才可见。
 func filterUserVisibleGroups(
 	groups []service.AvailableGroupRef,
 	allowed map[int64]struct{},
 ) []userAvailableGroup {
 	visible := make([]userAvailableGroup, 0, len(groups))
 	for _, g := range groups {
-		if _, ok := allowed[g.ID]; !ok {
-			continue
+		if g.IsExclusive {
+			if _, ok := allowed[g.ID]; !ok {
+				continue
+			}
 		}
 		visible = append(visible, userAvailableGroup{
 			ID:               g.ID,
