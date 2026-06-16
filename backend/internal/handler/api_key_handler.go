@@ -295,13 +295,12 @@ func (h *APIKeyHandler) GetAvailableGroups(c *gin.Context) {
 // GetGroupCatalog 获取用户端服务目录。
 // GET /api/v1/groups/catalog
 func (h *APIKeyHandler) GetGroupCatalog(c *gin.Context) {
-	subject, ok := middleware2.GetAuthSubjectFromContext(c)
-	if !ok {
+	if _, ok := middleware2.GetAuthSubjectFromContext(c); !ok {
 		response.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	groups, err := h.apiKeyService.GetGroupCatalog(c.Request.Context(), subject.UserID)
+	groups, err := h.apiKeyService.GetGroupCatalog(c.Request.Context())
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
