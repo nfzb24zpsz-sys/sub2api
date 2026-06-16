@@ -870,6 +870,7 @@ export default {
         cursor: {
           description: '适合在 Cursor 编辑器中使用自定义 OpenAI 兼容服务。',
           installHint: '桌面编辑器',
+          downloadImageAlt: 'Cursor 中文下载页中下载按钮的位置示意',
           steps: {
             download: '下载安装 Cursor，安装完成后继续配置模型服务。',
             configure: '在 Cursor 设置中添加 OpenAI 兼容服务，并填入下面的 Base URL 与 API Key。',

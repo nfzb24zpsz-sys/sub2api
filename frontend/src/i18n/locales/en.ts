@@ -871,6 +871,7 @@ export default {
         cursor: {
           description: 'Best for using a custom OpenAI-compatible service inside Cursor.',
           installHint: 'Desktop editor',
+          downloadImageAlt: 'Where to find the download button on the Cursor Chinese download page',
           steps: {
             download: 'Download and install Cursor, then continue configuring the model service.',
             configure: 'Add an OpenAI-compatible service in Cursor settings, then enter the Base URL and API key below.',

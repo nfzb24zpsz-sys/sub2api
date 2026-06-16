@@ -429,6 +429,7 @@ import cursorIcon from '@/assets/client-icons/cursor.png'
 import openCodeIcon from '@/assets/client-icons/opencode.png'
 import qoderIcon from '@/assets/client-icons/qoder.png'
 import codexDownloadImage from '@/assets/service-guide/codex_download.png'
+import cursorDownloadImage from '@/assets/service-guide/cursor_download.png'
 import ccSwitchOpenImage from '@/assets/service-guide/ccswitch_open.png'
 import ccSwitchImportImage from '@/assets/service-guide/ccswitch_import.png'
 import ccSwitchEnableImage from '@/assets/service-guide/ccswitch_enable.png'
@@ -1075,7 +1076,9 @@ function buildCursorSteps(): ClientStep[] {
       summary: t('services.guide.stepSummaries.cursor.download'),
       description: t('services.guide.clients.cursor.steps.download'),
       config: 'Open Cursor Settings > Models > Add new API key',
-      links: [{ label: t('services.guide.openDownloadPage'), href: 'https://cursor.com' }],
+      links: [{ label: t('services.guide.openDownloadPage'), href: 'https://cursor.com/cn/download', icon: 'download' }],
+      heroImage: cursorDownloadImage,
+      heroImageAlt: t('services.guide.clients.cursor.downloadImageAlt'),
     },
     {
       id: 'configure',
