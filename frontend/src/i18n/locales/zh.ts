@@ -721,7 +721,7 @@ export default {
       title: '服务配置引导',
       description: '选择你要使用的 AI 客户端，然后按步骤下载客户端并配置当前服务。',
       chooseClientTitle: '选择你要使用的 AI 客户端',
-      chooseClientHint: 'Codex、Cursor、OpenCode、Qoder',
+      chooseClientHint: 'Codex、OpenCode、Qoder',
       progressTitle: '配置进度',
       download: '下载',
       configure: '配置',
@@ -822,10 +822,6 @@ export default {
           download: '打开官方下载页下载 Codex',
           configure: '写入 Codex 配置和密钥'
         },
-        cursor: {
-          download: '安装 Cursor 编辑器',
-          configure: '添加 OpenAI 兼容服务'
-        },
         opencode: {
           download: '安装 OpenCode 命令行客户端',
           configure: '写入 opencode.json'
@@ -865,16 +861,6 @@ export default {
             importService: '点击页面下方按钮打开 CC-Switch，将当前服务导入进去，然后在 CC-Switch 中启用即可。',
             manualConfigure: '不使用 CC-Switch 时，按下面的文件路径和内容手动写入 Codex 配置。',
             start: '这一步一定要先重启 Codex。重启完成后，再发送一条简单请求确认服务可用。'
-          }
-        },
-        cursor: {
-          description: '适合在 Cursor 编辑器中使用自定义 OpenAI 兼容服务。',
-          installHint: '桌面编辑器',
-          downloadImageAlt: 'Cursor 中文下载页中下载按钮的位置示意',
-          steps: {
-            download: '下载安装 Cursor，安装完成后继续配置模型服务。',
-            configure: '在 Cursor 设置中添加 OpenAI 兼容服务，并填入下面的 Base URL 与 API Key。',
-            verify: '新建一个聊天或代码编辑请求，确认请求能从当前服务返回。'
           }
         },
         opencode: {

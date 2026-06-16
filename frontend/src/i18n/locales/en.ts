@@ -722,7 +722,7 @@ export default {
       title: 'Service Setup Guide',
       description: 'Choose the AI client you want to use, then follow the steps to download the client and configure this service.',
       chooseClientTitle: 'Choose the AI client you want to use',
-      chooseClientHint: 'Codex, Cursor, OpenCode, Qoder',
+      chooseClientHint: 'Codex, OpenCode, Qoder',
       progressTitle: 'Progress',
       download: 'Download',
       configure: 'Configure',
@@ -823,10 +823,6 @@ export default {
           download: 'Open the official Codex download page',
           configure: 'Write Codex config and key'
         },
-        cursor: {
-          download: 'Install the Cursor editor',
-          configure: 'Add an OpenAI-compatible service'
-        },
         opencode: {
           download: 'Install the OpenCode CLI',
           configure: 'Write opencode.json'
@@ -866,16 +862,6 @@ export default {
             importService: 'Use the button below to open CC-Switch and import this service, then enable it inside CC-Switch.',
             manualConfigure: 'If you do not want CC-Switch, write the Codex configuration files manually with the content below.',
             start: 'You must restart Codex first. After restarting, send a small request to confirm the service works.'
-          }
-        },
-        cursor: {
-          description: 'Best for using a custom OpenAI-compatible service inside Cursor.',
-          installHint: 'Desktop editor',
-          downloadImageAlt: 'Where to find the download button on the Cursor Chinese download page',
-          steps: {
-            download: 'Download and install Cursor, then continue configuring the model service.',
-            configure: 'Add an OpenAI-compatible service in Cursor settings, then enter the Base URL and API key below.',
-            verify: 'Start a new chat or coding request and confirm that the response comes back through this service.'
           }
         },
         opencode: {
